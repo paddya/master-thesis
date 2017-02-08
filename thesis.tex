@@ -1,0 +1,274 @@
+\documentclass{thesisclass}
+
+%% -------------------------------
+%% |    IM Thesis Template       |
+%% -------------------------------
+%% Further additions by: Philipp Stroehle, IM, 2013 
+%% philipp.stroehle "at" kit.edu
+
+%% Notes:
+%% Language switch after \begin{document}
+
+% Based on thesisclass.cls of Timo Rohrberg, 2009
+% ----------------------------------------------------------------
+% Thesis - Main document
+% ----------------------------------------------------------------
+
+% Select your thesis language here:
+\usepackage[english]{babel}
+%\usepackage[ngerman]{babel}
+
+
+%% ---------------------------------
+%% |      Additional packages      |
+%% ---------------------------------
+%% 
+
+\usepackage{graphicx}
+%http://en.wikibooks.org/wiki/LaTeX/Importing_Graphics#Graphics_storage
+\DeclareGraphicsExtensions{.pdf,.png,.jpg}
+\graphicspath{{./figures/}} %Use curly braces for each path to add and don't
+% forget trailing slash '/'
+% \usepackage{epstopdf} %Nice to automatically convert eps figures to pdf
+% format  (from inkscape, etc)
+\usepackage[square,sort,comma,numbers]{natbib}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{float}
+\usetikzlibrary{positioning}
+\usetikzlibrary{calc}
+\usepackage[algo2e,linesnumbered]{algorithm2e}
+\usepackage{pdflscape} 
+\usepackage{placeins}
+\usepackage[procnames]{listings}
+\usepackage{color}
+\tikzset{main node/.style={circle,fill=blue!20,draw,minimum size=1cm,inner
+sep=0pt},}
+%% ---------------------------------
+%% | Needed for the List of Abbreviations |
+%% ---------------------------------
+\usepackage{nomencl}
+\renewcommand{\nomname}{List of Abbreviations}
+% Punkte zw. Abkürzung und Erklärung
+\setlength{\nomlabelwidth}{.32\hsize}
+%.32\hsize bezieht sich auf die Punkte
+% zwischen Abkürzung und Erklärung -> je größer die Zahl, desto mehr
+% Punkte
+\renewcommand{\nomlabel}[1]{#1 \dotfill}
+% Zeilenabstäde verkleinern
+\setlength{\nomitemsep}{-\parsep}
+\makenomenclature
+\usepackage[normalem]{ulem}
+\newcommand{\markup}[1]{\uline{#1}}
+
+%% ---------------------------------
+%% |      Theorems and definitions |
+%% ---------------------------------
+%% 
+
+\newtheorem{definition}{Definition}[chapter]
+\newtheorem{proposition}{Proposition}[chapter]
+%% ---------------------------------
+%% | Information about the thesis  |
+%% ---------------------------------
+
+% uncomment one of the following, according to your thesis
+\newcommand{\mytype}{\iflanguage{english}{Master's Thesis}{Masterarbeit}} 
+%\newcommand{\mytype}{\iflanguage{english}{Master's Thesis}{Masterarbeit}} 
+%\newcommand{\mytype}{\iflanguage{english}{Seminar Thesis}{Seminararbeit}} 
+
+\newcommand{\myname}{Patrick Bisenius}
+\newcommand{\matricle}{1640015}
+\newcommand{\mytitle}{\iflanguage{english}{Computing Top-k
+Closeness Centrality in Fully-dynamic Graphs}{Berechnung von
+Top-k-Nähezentralität in volldynamischen Graphen}}
+\newcommand{\myinstitute}{\iflanguage{english}
+{At the Department of Informatics\\Institute of Theoretical Informatics}
+{Institut für Theoretische Informatik (ITI)}
+}
+
+\newcommand{\reviewerone}{Jun. Prof. Dr. Henning Meyerhenke}
+\newcommand{\reviewertwo}{?}
+\newcommand{\advisor}{Elisabetta Bergamini}
+\newcommand{\advisortwo}{}
+
+\newcommand{\timestart}{\iflanguage{english}{1st December 2016}{1. Januar
+2016}}
+\newcommand{\timeend}{\iflanguage{english}{31st May 2016}{31. Mai 2016}}
+\newcommand{\submissiontime}{31. Mai 2015}
+
+%% -------------------------------
+%% |  Information for PDF file   |
+%% -------------------------------
+%% IM: Auto-Fill this information
+\hypersetup{
+ pdfauthor={\myname},
+ pdftitle={\mytitle},
+ pdfsubject={\mytype},
+ pdfkeywords={\mytype}
+}
+
+%% ---------------------------------
+%% | ToDo Marker - only for draft! |
+%% ---------------------------------
+% Remove this section for final version!
+\setlength{\marginparwidth}{20mm}
+
+\newcommand{\margtodo}
+{\marginpar{\textbf{\textcolor{red}{ToDo}}}{}}
+
+\newcommand{\todo}[1]
+{{\textbf{\textcolor{red}{(\margtodo{}#1)}}}{}}
+
+
+%% --------------------------------
+%% | Old Marker - only for draft! |
+%% --------------------------------
+% Remove this section for final version!
+\newenvironment{deprecated}
+{\begin{color}{gray}}
+{\end{color}}
+
+
+%% --------------------------------
+%% | Settings for word separation |
+%% --------------------------------
+% Help for separation:
+% In german package the following hints are additionally available:
+% "- = Additional separation
+% "| = Suppress ligation and possible separation (e.g. Schaf"|fell)
+% "~ = Hyphenation without separation (e.g. bergauf und "~ab)
+% "= = Hyphenation with separation before and after
+% "" = Separation without a hyphenation (e.g. und/""oder)
+
+% Describe separation hints here:
+\hyphenation{
+% Pro-to-koll-in-stan-zen
+% Ma-na-ge-ment  Netz-werk-ele-men-ten
+% Netz-werk Netz-werk-re-ser-vie-rung
+% Netz-werk-adap-ter Fein-ju-stier-ung
+% Da-ten-strom-spe-zi-fi-ka-tion Pa-ket-rumpf
+% Kon-troll-in-stanz
+Lauf-zeit-ver-bes-se-run-gen
+}
+
+
+%% ------------------------
+%% |    Including files   |
+%% ------------------------
+% Only files listed here will be included!
+% Userful command for partially translating the document (for bug-fixing e.g.)
+\includeonly{%
+titlepage,
+abstract,
+text/abbreviations,
+text/introduction,
+text/content,
+text/evaluation,
+text/conclusion,
+text/declaration,
+text/appendix
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Here, main documents begins %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\frontmatter
+\pagenumbering{roman}
+\include{titlepage}
+\include{abstract}
+% IM Style: No additional blank page
+% \blankpage
+
+
+%% -------------------
+%% |   Directories   |
+%% -------------------
+\tableofcontents
+% IM Style: No additional blank page
+% \blankpaage
+
+% Do not include a list of figures, list of tables and list of abbreviations,if the work is a seminar thesis
+\iflanguage{english}{
+\ifthenelse{\equal{\mytype}{Seminar Thesis}}
+{}
+{
+\listoffigures \addcontentsline{toc}{chapter}{List of Figures} 
+\listoftables  \addcontentsline{toc}{chapter}{List of Tables} 
+%\printnomenclature   \addcontentsline{toc}{chapter}{List of Abbreviations} 
+}
+}
+{
+\ifthenelse{\equal{\mytype}{Seminararbeit}}
+{}
+{
+\listoffigures \addcontentsline{toc}{chapter}{Abbildungsverzeichnis} 
+\listoftables \addcontentsline{toc}{chapter}{Tabellenverzeichnis} 
+%\printnomenclature \addcontentsline{toc}{chapter}{AbkÃ¼rzungsverzeichnis}
+}
+}
+
+% Execute this command for index creation, i.e., for abbreviations by the
+%nomencl package
+% makeindex thesis.nlo -s nomencl.ist -o thesis.nls
+
+
+
+%\printnomenclature
+
+
+
+%% -----------------
+%% |   Main part   |
+%% -----------------
+\mainmatter
+\pagenumbering{arabic}
+\include{text/introduction}
+\include{text/content}
+\include{text/conclusion}
+\include{text/declaration}
+
+
+%% ----------------
+%% |   Appendix   |
+%% ----------------
+% IM Style: No additional blank page
+% \cleardoublepage
+
+%\input{text/appendix}
+
+
+%% --------------------
+%% |   Bibliography   |
+%% --------------------
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{\bibname}
+
+% IM Style
+\iflanguage{english}
+{\bibliographystyle{alpha}}	% english style
+{\bibliographystyle{alpha}}	% german style
+
+%
+
+% Informatik-Style
+%\iflanguage{english}
+%{\bibliographystyle{IEEEtranSA}}	% english style
+%{\bibliographystyle{babalpha-fl}}	% german style
+												  
+% Use IEEEtran for numeric references
+%\bibliographystyle{IEEEtranSA})
+
+\bibliography{thesis}
+
+
+\end{document}

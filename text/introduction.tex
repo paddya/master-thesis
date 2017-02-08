@@ -1,0 +1,23 @@
+%% introduction.tex
+%%
+
+%% ==============================
+\chapter{Introduction}
+\label{ch:Introduction}
+%% ==============================
+
+In network analysis, one fundamental problem is finding the most important and central nodes. Several measures have been proposed to ascertain the importance of nodes within their graphs. These measures can be used to find the most important people in social networks or central places in street networks.
+
+% TODO: Cite Dijkstra
+Closeness centrality is based on the intuition that a node is important if its distance to other nodes in the graph is small. Computing the closeness centrality of a node in an unweighted graph requires a complete breadth-first search (BFS), and a complete run of Dijkstra's algorithm on weighted graphs. In order to compute the closeness centrality of all nodes in the graph, one such search is required from all nodes. This is too expensive, especially on large real-world networks. If the application requires a complete ranking of all nodes, this effort can not be avoided.
+
+For some applications, however, it is enough to compute a list of the $k$ most central nodes. This problem is called \emph{Top-k closeness}.
+
+
+
+\paragraph{State of the Art}
+
+\paragraph{Contributions}
+\
+
+
