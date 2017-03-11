@@ -1,0 +1,41 @@
+\chapter{Preliminaries}
+\label{ch:preliminaries}
+
+In this thesis, $G = (V, E)$ usually denotes a simple, unweighted graph with a set of nodes $V$ and a set of edges $E$ between the nodes. An undirected edge is a subset of $V$ with exactly two distinct elements. A directed edge is an element of $V \times V$. The distance between two nodes $u$ and $v$ is denoted by $d(u, v)$. The set of neighbor nodes for $v$ is denoted by $N(v) := \{u : \exists (v, u) \in E\}$.
+
+We now want to define the concept of closeness centrality. The most simple definition, while only useful for connected graphs, is the following:
+
+\begin{definition}
+\label{def:closenessConnected}
+Let $G = (V, E)$ be a connected, unweighted graph. The closeness centrality of a node $v \in V$ is defined as
+\begin{align*}
+	c(v) = \frac{|V| - 1}{\sum_{u \in V}{d(v, u)}}.
+\end{align*}
+\end{definition}
+
+In the disconnected case, there are node pairs without a path between them. Using Definition~\ref{def:closenessConnected} and assuming $d(u, v) = \infty$ for such node pairs, the sum over all the distances in the denominator would blow up and make the resulting closeness centralities useless. To solve this problem, we first define $R(v) \coloneqq \{u \in V : u \text{ is reachable from }v \text{ in } G\}$ and $r(v) \coloneqq |R(v)|$. This leads to a generalized version of Definition~\ref{def:closenessConnected}:
+\begin{align}
+	c(v) = \frac{r(v) - 1}{\sum_{u \in R(v)}{d(v, u)}}. \label{eq:closenessIncomplete}
+\end{align}
+However, this definition does not differentiate between central nodes in small components and central nodes in large components of a graph. Intuitively, a node $v$ with $r(v) = 2000$ and a total distance of $4000$ to all reachable nodes is more central than a node $w$ with $r(w) = 20$ and a total distance of $40$. In order to give preference to nodes in large components, we scale Equation~\ref{eq:closenessIncomplete} by $\frac{r(v)}{|V| - 1}$. 
+
+\begin{definition}
+\label{def:closenessGeneral}
+Let $G = (V, E)$ be an unweighted graph. The closeness centrality of a node $v \in V$ is defined as
+\begin{align*}
+	c(v) = \frac{r(v) - 1}{\sum_{u \in R(v)}{d(v, u)}} \cdot \frac{r(v)}{n - 1}.
+\end{align*}
+\end{definition}
+
+Another approach to handle disconnected graphs is called \emph{harmonic centrality}.
+
+\begin{definition}
+\label{def:harmonicCentrality}
+Let $G = (V, E)$ be an unweighted graph. The harmonic centrality of a node $v \in V$ is defined as
+\begin{align*}
+	h(v) = \sum_{u \in V}{\frac{1}{d(v, u)}}.
+\end{align*}
+\end{definition}
+If there is no path between $u$ and $v$, the inverse distance is set to $0$.
+
+In this thesis, we will sometimes use \emph{harmonic centrality} and \emph{closeness centrality} interchangeably.

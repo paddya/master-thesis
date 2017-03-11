@@ -37,6 +37,7 @@
 \usepackage{amsthm}
 \usepackage{amsfonts}
 \usepackage{amssymb}
+\usepackage{mathtools}
 \usepackage{tikz}
 \usepackage{booktabs}
 \usepackage{multirow}
@@ -49,8 +50,14 @@
 \usepackage[procnames]{listings}
 \usepackage{color}
 \usepackage[draft]{todonotes}
-\tikzset{main node/.style={circle,fill=blue!20,draw,minimum size=1cm,inner
-sep=0pt},}
+\usepackage{csquotes}
+	
+\usetikzlibrary{positioning}
+\tikzset{main node/.style={circle,fill=blue!20,draw,minimum size=1cm,inner sep=0pt},}
+
+\usetikzlibrary{arrows}
+
+
 %% ---------------------------------
 %% | Needed for the List of Abbreviations |
 %% ---------------------------------
@@ -213,13 +220,13 @@ text/appendix
 {
 \listoffigures \addcontentsline{toc}{chapter}{Abbildungsverzeichnis} 
 \listoftables \addcontentsline{toc}{chapter}{Tabellenverzeichnis} 
-%\printnomenclature \addcontentsline{toc}{chapter}{AbkÃ¼rzungsverzeichnis}
+%\printnomenclature \addcontentsline{toc}{chapter}{Abkürzungsverzeichnis}
 }
 }
 
-% Execute this command for index creation, i.e., for abbreviations by the
-%nomencl package
-% makeindex thesis.nlo -s nomencl.ist -o thesis.nls
+% Execute this command for index creation, i.e., for abbreviations by the nomencl package
+
+%makeindex thesis.nlo -s nomencl.ist -o thesis.nls
 
 
 
@@ -256,8 +263,8 @@ text/appendix
 
 % IM Style
 \iflanguage{english}
-{\bibliographystyle{alpha}}	% english style
-{\bibliographystyle{alpha}}	% german style
+{\bibliographystyle{plain}}	% english style
+{\bibliographystyle{plain}}	% german style
 
 %
 
