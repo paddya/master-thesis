@@ -1,0 +1,50 @@
+\chapter{Group closeness}
+\label{ch:groupCloseness}
+
+The concept of closeness centrality can be extended to groups of nodes. Sometimes, an application does not require a list of important nodes, but rather a group of nodes that in combination has a large influence. The most important nodes of a graph are often close to each other, so their ``spheres of influence'' overlap. In other words, the most important nodes might have similar distances to most nodes in the graph. In a group of important nodes, the individual contribution of some nodes might be minimal.
+
+
+
+\section{Preliminaries}
+Let $S \subseteq V$ denote a group of $k$ nodes. We define the distance of a node $v$ to the group as $d_S(v) := min_{s \in S}d(s, v)$. 
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}
+    \tikzstyle group node=[main node,fill=yellow!80];
+    
+	\node[group node] (v) {};
+    \foreach \a in {1,2,...,6}{
+		\draw (\a*360/6: 2cm) node[main node] (v\a) {\a};
+		\draw (v) to (v\a);
+	}
+	
+	\begin{scope}[xshift=6cm]
+	
+	\node[group node] (u) {};
+    \foreach \a in {1,2,...,6}{
+		\draw (\a*360/6: 2cm) node[main node] (u\a) {\a};
+		\draw (u) to (u\a);
+	}
+	\end{scope}
+	
+	
+	\begin{scope}[yshift=-6cm, xshift=3cm]
+	
+	\node[group node] (w) {};
+    \foreach \a in {1,2,...,6}{
+		\draw (\a*360/6: 2cm) node[main node] (w\a) {\a};
+		\draw (w) to (w\a);
+	}
+	\end{scope}
+	
+	\draw (u) to [bend right] (v);
+	\draw (u) to [bend left] (w);
+	\draw (v) to [bend right] (w);
+	
+	\draw (v4) to (w3);
+	\draw (u5) to [bend left] (w5);
+\end{tikzpicture}
+\caption{Group closeness}{}
+\label{fig:groupCloseness}
+\end{figure}
