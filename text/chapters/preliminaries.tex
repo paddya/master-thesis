@@ -1,9 +1,11 @@
 \chapter{Preliminaries}
 \label{ch:preliminaries}
 
-In this thesis, $G = (V, E)$ usually denotes a simple, unweighted graph with a set of nodes $V$ and a set of edges $E$ between the nodes. An undirected edge is a subset of $V$ with exactly two distinct elements. A directed edge is an element of $V \times V$. The distance between two nodes $u$ and $v$ is denoted by $d(u, v)$. The set of neighbor nodes for $v$ is denoted by $N(v) := \{u : \exists (v, u) \in E\}$.
+In this thesis, $G = (V, E)$ denotes a simple, unweighted graph with a set of nodes $V$ and a set of edges $E$ between the nodes. An undirected edge is a subset of $V$ with exactly two distinct elements. A directed edge is an element of $V \times V$. The distance between two nodes $u$ and $v$ is denoted by $d(u, v)$. There are sometimes multiple graph instances $G$ and $G'$ when dealing with dynamic graphs. In these cases, we will use $d_G(u, v)$ to refer to distances in $G$.
 
-We now want to define the concept of closeness centrality. The most simple definition, while only useful for connected graphs, is the following:
+The set of neighbor nodes for $v$ is denoted by $N(v) := \{u : \exists (v, u) \in E\}$ in a directed graph and by $N(v) := \{u : \exists \{v, u\} \in E\}$ in an undirected graph. It is sometimes useful to consider the incoming edges of a node in directed graphs. $N^{\leftarrow}(v) := \{u : \exists (u, v) \in E\}$ denotes the set of incoming neighbors of a node $v$.
+
+We now want to define the concept of closeness centrality. The most simple definition, while only meaningful for connected graphs, is the following:
 
 \begin{definition}
 \label{def:closenessConnected}
@@ -33,9 +35,7 @@ Another approach to handle disconnected graphs is called \emph{harmonic centrali
 \label{def:harmonicCentrality}
 Let $G = (V, E)$ be an unweighted graph. The harmonic centrality of a node $v \in V$ is defined as
 \begin{align*}
-	h(v) = \sum_{u \in V}{\frac{1}{d(v, u)}}.
+	h(v) = \sum_{u \in V}{\frac{1}{d(v, u)}}\text{~\cite{boldi2014axioms}}.
 \end{align*}
 \end{definition}
-If there is no path between $u$ and $v$, the inverse distance is set to $0$.
-
-In this thesis, we will sometimes use \emph{harmonic centrality} and \emph{closeness centrality} interchangeably.
+If there is no path between $u$ and $v$, the inverse distance is set to $0$. Unless stated otherwise, \emph{closeness centrality} refers to \emph{harmonic centrality} in this thesis.
