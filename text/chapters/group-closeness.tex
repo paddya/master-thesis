@@ -1,21 +1,27 @@
 \chapter{Group closeness}
 \label{ch:groupCloseness}
 
-The concept of closeness centrality can be extended to groups of nodes. Sometimes, an application does not require a list of important nodes, but rather a group of nodes that in combination has a large influence. The most important nodes of a graph are often close to each other, so their ``spheres of influence'' overlap. In other words, the most important nodes might have similar distances to most nodes in the graph. In a group of important nodes, the individual contribution of some nodes might be minimal.
+The concept of closeness centrality can be extended to groups of nodes. Sometimes, an application does not require a list of important nodes, but rather a group of nodes that in combination has a large influence. The most important nodes of a graph are often close to each other, so their ``spheres of influence'' overlap. In other words, the most important nodes might have similar distances to most nodes in the graph. In a group of the most important nodes, the individual contribution of some nodes might therefore be minimal. Instead, it might make more sense to ``spread out'' the nodes of the group over the whole graph in order to minimize the distances to as many nodes as possible.
 
+Chen et al. call this problem \emph{Maximum Closeness Centrality Group Identification} (MCGI) in~\cite{Chen2016}. They show the problem to be NP-hard.
 
+\section{Problem definition}
 
-\section{Preliminaries}
-Let $S \subseteq V$ denote a group of $k$ nodes. We define the distance of a node $v$ to the group as $d_S(v) := min_{s \in S}d(s, v)$. 
+Let $G = (V, E)$ denote an undirected connected graph. Let $S \subseteq V$ denote a group of $k$ nodes. We define the distance of a node $v$ to the group as $d_S(v) := min_{s \in S}d(s, v)$. The \emph{group closeness} of $S$ is defined as
+\begin{align}
+	c(S) = \frac{|V|}{\sum_{v \in V \setminus S}{d_S(v)}}.
+\end{align}
+The goal of the Maximum Closeness Centrality Group Identification problem is to find the group $S^*$ which maximizes $c(S^*)$ among all groups $S^*$ of size $k$.
+Figure~\ref{fig:groupCloseness} illustrates the problem. The yellow nodes belong to a group of size $3$.
 
 \begin{figure}[h!]
 \centering
-\begin{tikzpicture}
+\begin{tikzpicture}[scale=0.8]
     \tikzstyle group node=[main node,fill=yellow!80];
     
 	\node[group node] (v) {};
     \foreach \a in {1,2,...,6}{
-		\draw (\a*360/6: 2cm) node[main node] (v\a) {\a};
+		\draw (\a*360/6: 2cm) node[main node] (v\a) {};
 		\draw (v) to (v\a);
 	}
 	
@@ -23,7 +29,7 @@ Let $S \subseteq V$ denote a group of $k$ nodes. We define the distance of a nod
 	
 	\node[group node] (u) {};
     \foreach \a in {1,2,...,6}{
-		\draw (\a*360/6: 2cm) node[main node] (u\a) {\a};
+		\draw (\a*360/6: 2cm) node[main node] (u\a) {};
 		\draw (u) to (u\a);
 	}
 	\end{scope}
@@ -33,7 +39,7 @@ Let $S \subseteq V$ denote a group of $k$ nodes. We define the distance of a nod
 	
 	\node[group node] (w) {};
     \foreach \a in {1,2,...,6}{
-		\draw (\a*360/6: 2cm) node[main node] (w\a) {\a};
+		\draw (\a*360/6: 2cm) node[main node] (w\a) {};
 		\draw (w) to (w\a);
 	}
 	\end{scope}
@@ -48,3 +54,45 @@ Let $S \subseteq V$ denote a group of $k$ nodes. We define the distance of a nod
 \caption{Group closeness}{}
 \label{fig:groupCloseness}
 \end{figure}
+
+\section{Computing group closeness}
+The group closeness function $c(S)$ has two properties that can be exploited to design an approximative algorithm for the problem: monotonicity and submodularity.
+
+\begin{itemize}
+	\item Monotonicity: Given any two sets $S, T \subseteq V$ with $S \subseteq T$, a function $f(x)$ is monotonic, if $f(S) \leq f(T)$.
+	\item Submodularity: Given any two sets $S, T \subseteq V$ with $S \subseteq T$ and $v \in V \setminus T$, a function $f(x)$ is submodular, if $f(S \cup \{v\}) - f(S) \geq f(T \cup \{v\}) - f(T)$.
+\end{itemize}
+Chen et al. provide a proof that the group closeness function has these properties in~\cite{Chen2016}.
+
+\subsection{Greedy algorithm by Chen et al.}
+Since the group closeness function is submodular and monotonic, there exists a greedy algorithm that computes a set $S$ with $k$ nodes that is a $1 - \frac{1}{e}$ approximation of the optimal solution $S^*$. It has a space complexity of $\mathcal{O}(n^2)$ and a time complexity of $\mathcal{O}(n^3)$.
+
+Algorithm~\ref{alg:chenGroupCloseness} outlines the greedy algorithm. It maintains a set $S$ which contains the nodes already selected in previous iterations. The matrix $M$ stores the distance $d_{S \cup \{u\}}(v)$ ($v \in V$) for each node $u$. For instance, if a node $u$ has distance $4$ to a node $w$ and the group $S$ has distance $5$ to $w$, $M[u, w]$ would store $4$. $Score$ is a vector that stores the group closeness if a node $u$ is added to $S$, i.e. $c(S \cup \{u\})$. Initially each entry in $Score$ is set to the closeness centrality of the corresponding node (Line~\ref{alg:initScore}). In the main loop (Line~\ref{alg:chenGroupClosenessLoop}), the algorithm selects the node with the highest value in $Score$ in each iteration for the group $S$ (Line~\ref{alg:selectNode}). After the node is selected, the distances stored in $M$ are updated to reflect any new shortest paths between the group $S$ and other nodes in the graph (Line~\ref{alg:groupDistanceUpdate}). At last, the $Score[u]$ is updated for each node $u \in V \setminus S$ (Line~\ref{alg:groupClosenessScoreUpdate}).
+
+\begin{algorithm2e}[h!]
+  \label{alg:chenGroupCloseness}
+  \KwData{$G = (V, E)$: a social network, $k$: a positive integer}
+  \KwResult{$S$: a set of $k$ nodes}
+ 
+  $S \gets \emptyset$ \\
+  $M \gets $ all shortest path distances \\
+  $Score \gets \{c(u) \mid u \in V\}$ \label{alg:initScore} \\
+  \While{$|S| < k$}{ \label{alg:chenGroupClosenessLoop}
+    $v \gets arg\,max_{w \in V \setminus S}{Score[w]}$ \label{alg:selectNode} \\
+    $S \gets S \cup \{v\}$ \\
+    \ForEach{$u \in V \setminus S$}{
+      \ForEach{$w \in V$}{
+        \If{$d(u, w) > d(v, w)$}{ \label{alg:groupDistanceUpdate}
+          $M[u, w] = d(v, w)$
+        }
+      }
+      $Score[u] \gets c(S \cup \{u\})$ \label{alg:groupClosenessScoreUpdate}
+    }
+  
+  }
+ 
+  \caption{Greedy algorithm to approximate the group with maximum group closeness}
+\end{algorithm2e}
+
+\subsection{Improvements by Bergamini and Meyerhenke}
+
