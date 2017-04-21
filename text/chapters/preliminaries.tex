@@ -29,13 +29,13 @@ Let $G = (V, E)$ be an unweighted graph. The closeness centrality of a node $v \
 \end{align*}
 \end{definition}
 
-Another approach to handle disconnected graphs is called \emph{harmonic centrality}.
+Another approach to handle disconnected graphs is called \emph{harmonic closeness centrality}.
 
 \begin{definition}
 \label{def:harmonicCentrality}
-Let $G = (V, E)$ be an unweighted graph. The harmonic centrality of a node $v \in V$ is defined as
+Let $G = (V, E)$ be an unweighted graph. The harmonic closeness centrality of a node $v \in V$ is defined as
 \begin{align*}
 	h(v) = \sum_{u \in V}{\frac{1}{d(v, u)}}\text{~\cite{boldi2014axioms}}.
 \end{align*}
 \end{definition}
-If there is no path between $u$ and $v$, the inverse distance is set to $0$. Unless stated otherwise, \emph{closeness centrality} refers to \emph{harmonic centrality} in this thesis.
+If there is no path between $u$ and $v$, the inverse distance is set to $0$. Unless stated otherwise, \emph{closeness centrality} refers to \emph{harmonic closeness centrality} in this thesis.

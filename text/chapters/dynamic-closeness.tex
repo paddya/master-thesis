@@ -3,49 +3,58 @@
 
 Many algorithms from the field of network analysis, including the algorithms from Chapter~\ref{ch:staticCloseness}, are designed to be run only once on a static graph. This does not match the requirements of many real-world applications. In social networks like Facebook or Twitter, the underlying social graph changes constantly. There are always new users who join a social network, some others leave; existing users befriend other users or end virtual friendships. The structure of the underlying social graph always changes, and therefore every metric in the network also changes.
 
-The na\"ive approach to update these metrics is to simply run the corresponding static algorithm again after the graph has changed. The problem with this approach is that information obtained in previous runs is disregarded and the runtime of the algorithm will be roughly the same as before. In practice, modifying a single edge in the graph will often not affect all nodes in the graph. Depending on the metric and the corresponding algorithm, nodes unaffected by a modification can then simply be skipped to reduce the overall runtime. The dynamic algorithm for Top-k closeness in complex networks (Section~\ref{sec:topKClosenessComplex}) builds on the static algorithm. 
+The na\"ive approach to update these metrics is to simply run the corresponding static algorithm again after the graph has changed. The problem with this approach is that information obtained in previous runs is disregarded and the runtime of the algorithm will be roughly the same as before. In practice, modifying a single edge in the graph will often not affect all nodes in the graph. Depending on the metric and the corresponding algorithm, nodes unaffected by a modification can then simply be skipped to reduce the overall runtime.
+
+In this thesis, we will present two new dynamic algorithms. The first one is based on the static algorithm for complex networks by Borassi et al. (see Section~\ref{sec:topKClosenessComplex}). The second one is based on the static algorithm for networks with large diameter by Bergamini et al. (see Section~\ref{sec:largeDiameterStatic}).
 
 \section{Preliminaries}
-Let $G(V, E)$ denote an unweighted graph $G$ with the set of nodes $V$ and the set of edges $E$. For simplicity, we will use the notation $(u, v)$ for an edge between two nodes $u$ and $v$ interchangeably for directed and undirected edges. We can define an \emph{edge insertion} as
+Let $G(V, E)$ denote an unweighted graph $G$ with the set of nodes $V$ and the set of edges $E$. For simplicity, we will use the notation $(u, v)$ for an edge between two nodes $u$ and $v$ interchangeably for directed and undirected edges. We can define an \emph{edge insertion} as a function $f_i$, such that
 \begin{align}
 	f_i(G(V, E), (u, v)) = G'(V, E \cup (u, v))\text{ with } (u, v) \notin E.
 \end{align}
-An \emph{edge removal} is defined as
+An \emph{edge removal} is defined as a function $f_r$, such that
 \begin{align}
 	f_r(G(V, E), (u, v)) = G'(V, E \setminus (u, v)) \text{ with } (u, v) \in E.
 \end{align}
 We will use \emph{edge modification} as a collective term for both edge insertions and edge removals. We do not consider node modifications in this thesis because adding or removing isolated nodes does not affect the closeness centralities of the other nodes in the graph. Further, removing a node that is not isolated is equivalent to first removing all of its incident edges one-by-one and then removing an isolated node. Inserting a node with a set of incident edges can also be split into two parts: adding an isolated node and then adding the incident edges one-by-one.
 
-We also define the \emph{distance to the edge modification} as $d_G^f(w, (u, v)) := \min{(d_G(w, u), d_G(w, v))}$.
+We also define the \emph{distance to the edge modification} as $d_G^f(w, (u, v)) := \min{(d_G(w, u), d_G(w, v))}$ for undirected graphs. In directed graphs, only the distance to the source node $u$ of the edge is relevant and we get $d_G^f(w, (u, v)) = d_G(w, u)$.
 
-%\paragraph{Programming model}
-%\label{par:dynamicProgrammingModel}
-%In order to minimize the differences between the formal explanation of the algorithms in this thesis and their actual implementation, it is useful to mention some general implementation details upfront. In general, an application will hold an instance of a graph $G$ and will compute the $k$ most central nodes once in the beginning. The $k$ most central nodes are not a simple list of node/centrality pairs, but are managed by an object that preserves additional information acquired during the initial computation. If the applications changes the graph instance $G$, it generates a \emph{graph event} that is passed to the object managing the $k$ most central nodes which in turn updates the list based on the information in the event. This is useful because it does not require the application to hold both versions of the graph in memory. The dynamic algorithms managing certain metrics of the network also do not need to modify the graph instance themselves during their update operation. Instead, they can use the information from the graph event and adjust the graph virtually.
+\todo{Short section about dynamic closeness}
 
 \section{Dynamic Top-k closeness}
-We will now describe two algorithms to update the list of the $k$ most central nodes in a graph after an edge modification. The first algorithm is based on static algorithm by Borassi et al. presented in Section~\ref{sec:topKClosenessComplex}. It works especially well on networks with small diameter. The second algorithm is based on the static algorithm for networks with large diameter by Bergamini et al. which is described in Section~\ref{sec:largeDiameterStatic}. The adaptations of both algorithms for the dynamic case both follow the static version closely. However, the dynamic versions will try use previously collected information in order to skip some of the work the static versions have to do.
+We will now describe two new algorithms to update the list of the $k$ most central nodes in a graph after an edge modification. The first algorithm is based on the static algorithm by Borassi et al. presented in Section~\ref{sec:topKClosenessComplex}. It works especially well on networks with small diameter. The second algorithm is based on the static algorithm for networks with large diameter by Bergamini et al. which is described in Section~\ref{sec:largeDiameterStatic}. The adaptations of both algorithms for the dynamic case both follow the static version closely. However, the dynamic versions will try to use previously collected information in order to skip some of the work the static versions have to do.
 
-In general, it makes sense to only process nodes which are actually affected by an edge modification. 
+In general, it makes sense to only process nodes which are actually \emph{affected} by an edge modification. 
 
 \subsection{Affected nodes}
 
-Transforming a graph $G$ to $G'$ by inserting or removing edges will reduce the distances between some node pairs, and thus change the closeness centralities of these nodes.
+Transforming a graph $G$ to $G'$ by inserting or removing edges will change the distances between some node pairs, and thus change the closeness centralities of these nodes.
 
 \subsubsection{Definition and observations}
 
 \begin{definition}
 \label{def:affectedNodes}
 	Let $G = (V, E)$ denote an unweighted graph and $G' = f(G)$ a modified version of $G$ with $f \in \{f_i, f_r\}$. Then the nodes in 
-	\[
-		A_G^f(u, v) = \{s \mid \exists t \in V : d_G(s,t) \neq d_{G'}(s, t)\}
-	\] are called \textbf{affected nodes}.
+	\begin{align}
+		A_G^f(u, v) &= \{s \in V \mid \exists t \in V : d_G(s,t) \neq d_{G'}(s, t)\} \label{eq:affectedNodesGeneral} \\
+		            &=\{s \in V \mid d_G(s, v) \neq d_{G'}(s, v) \lor d_G(s, u) \neq d_{G'}(s, u)\} \label{eq:affectedNodesSimplified}
+	\end{align} are called \textbf{affected nodes}.
 \end{definition}
  
 First, we consider the insertion of the edge $(u, v)$. In undirected graphs, both $u$ and $v$ will obviously be affected by this edge insertion because their new distance will be $1$ while it had to be at least $2$ before the insertion. In directed graphs, only $u$ will be affected. Now consider two nodes $s$ and $t$ with $d_G(s, t) > d_G(s, u) + d_G(v, t) + 1$. After inserting $(u, v)$, the new shortest path will use the new edge. The length of the new path is then $d_{G'}(s, t) = d_G(s, u) + d_G(v, t) + 1$. In general, every new shortest path has to contain the edge $(u, v)$.
 
 In the case of an edge removal, the distance between two nodes $s$ and $t$ only changes if all the shortest paths between the two nodes contain the removed edge. This makes both operations symmetrical. After an edge insertion, all new shortest paths contain the inserted edge. If the edge is subsequently removed, only these shortest paths cease to exist.
 
+We noted earlier that each new shortest path or each erased shortest path must always contain the modified edge. We will call these shortest paths \emph{affected shortest paths}. Each affected shortest path must contain the node sequence $u - v$. In undirected graphs, we can always switch the direction of a path such that $u$ and $v$ appear in this order.
+
+For any node $s \in A_G^f(u, v)$, we only need to know whether there is at least one affected shortest path which starts in that node. Each affected shortest path contains the sequence $u - v$ and the distance between both nodes changes after modifying the edge $(u, v)$. Therefore, the distance to either $u$ or $v$ will change for each affected node. Therefore, Equation~\ref{eq:affectedNodesGeneral} can be rewritten to Equation~\ref{eq:affectedNodesSimplified}. We note that in the directed case, there are no nodes $s$ for which $d_G(s, u) \neq d_{G'}(s, u)$. Equation~\ref{eq:affectedNodesSimplified} can be rewritten for directed graphs as
+\begin{align}
+	A_G^f(u, v) = \{s \in V \mid d_G(s, v) \neq d_{G'}(s, v)\} \label{eq:affectedNodesSimplifiedDirected}.
+\end{align}
+
 Figure~\ref{fig:affectedNodes} shows an example of an edge modification. The nodes affected by either removing or inserting the dashed edge between $u$ and $v$ are marked in red.
+
 
 \begin{figure}[h!]
 \centering
@@ -78,37 +87,37 @@ Figure~\ref{fig:affectedNodes} shows an example of an edge modification. The nod
 \end{figure}
 
 
+
 \subsubsection{Computing affected nodes}
-We noted in the previous section that each new shortest path or each erased shortest path must always contain the modified edge. We will call these shortest paths \emph{affected shortest paths}. Each affected shortest path must contain the node sequence $u - v$. In undirected graphs, we can always switch the direction of a path such that $u$ and $v$ appear in this order.
-
-For any node $s \in A_G^f(u, v)$, we only need to know whether there is at least one affected shortest path which starts in that node. Each affected shortest path contains the sequence $u - v$ and the distance between both nodes changes after modifying the edge $(u, v)$. Therefore, the distance to either $u$ or $v$ will change for each affected node. Definition~\ref{def:affectedNodes} can be rewritten to
-\begin{align}
-	A_G^f(u, v) = \{s \in V \mid d_G(s, v) \neq d_{G'}(s, v) \lor d_G(s, u) \neq d_{G'}(s, u)\}.
-\end{align}
-
-
 \paragraph{Directed graphs}
 In directed graphs, each affected shortest path contains the exact sequence $u - v$. Therefore, we only need to find those nodes for which the distance to $v$ changes (see Figure~\ref{fig:affectedNodesDirectedBfs}). Algorithm~\ref{alg:affectedNodesDirected} computes this set of nodes for an edge insertion on a directed graph.
 
-We first run a reverse BFS (following incoming edges) from $v$ and store the distances to each node in the graph (Line~\ref{alg:reverseBFSCall}). During that first reverse BFS, we always assume that the modified edge is not part of the graph. For simplicity, the pseudocode in Algorithm~\ref{alg:affectedNodesDirected} explicitly constructs a new graph instance $G'$ (Line~\ref{alg:affectedNodesNewInstance}). In practice, however, the dynamic algorithm that manages the closeness centralities only holds one instance of the graph $G$ and does not modify it. Instead, the dynamic algorithm gets notified about changes and can react to them. This means that we have to handle edge insertions and edge removals separately. For edge insertions, we simply ignore the inserted edge during the first BFS. For edge removals, we can run a standard reverse BFS on the graph since the edge is no longer part of the graph when the dynamic algorithm updates the closeness centralities.
+Let $G^-$ denote the graph $G$ without the edge $(u, v)$, let $G^{+}$ denote the graph $G$ that contains the edge $(u, v)$. We first run a reverse BFS (following incoming edges) on $G^-$ starting from $v$ and store the distances to each node in the graph (Line~\ref{alg:reverseBFSCall}).
 
-We then execute a second reverse BFS starting in $v$, this time on a graph which contains the modified edge. This pruned reverse BFS is shown in Algorithm~\ref{alg:prunedReverseBFS}. It is supplied with the graph $G$, the source node for the reverse BFS $s$ and an array $d_{old}$ containing the distances between $s$ and each other node in the graph that does not contain the modified edge. We use a modified version of the standard algorithm which adds subtree pruning to avoid a full search. If we visit a new node $w$, we check if its distance to the source node is smaller than the old distance (Line~\ref{alg:reverseBFSPruning}). If the new distance is smaller than the old distance, we add $w$ to the set of affected nodes and to the search queue. This technique allows us to skip subtrees that have not changed due to the edge modification.
+We then execute a second reverse BFS starting in $v$, this time on $G^{+}$. This pruned reverse BFS is shown in Algorithm~\ref{alg:prunedReverseBFS}. It is supplied with the graph $G^{+}$, the source node for the reverse BFS $s$ and an array $d^-$ containing the distances between $s$ and each other node in the graph that does not contain the modified edge. We use a modified version of the standard algorithm which adds subtree pruning to avoid a full search. If we visit a new node $w$, we check if its distance to the source node is smaller than the old distance (Line~\ref{alg:reverseBFSPruning}). If the new distance is smaller than the old distance, we add $w$ to the set of affected nodes and to the search queue. This technique allows us to skip subtrees that have not changed due to the edge modification.
 
-In practice, we operate on a virtual graph that either already contains an inserted edge or does no longer contain a removed edge. In the case of an edge insertion, the underlying graph will already contain the new edge, so no additional adjustments are required. For edge removals, the underlying graph will no longer contain the edge, so it has to be added back virtually. This is done by adding the old neighbor $u$ to the search queue before the search starts. This is shown in Lines~\ref{alg:addingAdditionalNeighbor}-\ref{alg:addingAdditionalNeighborEnd} of Algorithm~\ref{alg:prunedReverseBFSRemovals}.
+It is not practical to construct separate instances $G^-$ and $G^{+}$ of the graph when dealing with real-world networks. It is reasonable to assume that the underlying application only holds one instance of the graph. For instance, in the case of an edge removal, the underlying graph will no longer contain the removed edge when the update algorithm is called. This means that the underlying graph is equal to $G^-$. Therefore, the first reverse BFS can be executed without any further adjustments. However, the removed edge has to be added back virtually for the second BFS which is run on $G^{+}$. This is done by adding the old neighbor $u$ to the search queue before the search starts. This is shown in Lines~\ref{alg:addingAdditionalNeighbor}-\ref{alg:addingAdditionalNeighborEnd} of Algorithm~\ref{alg:prunedReverseBFSRemovals}.
 
 \paragraph{Undirected graphs}
-Finding the affected nodes on undirected graphs requires more computational effort. As illustrated in Figure~\ref{fig:affectedNodesUndirectedBfs}, those nodes can either have a different distance to $u$ or to $v$. On undirected graphs, we first run a normal BFS from both $u$ and $v$ on the graph without the modified edge and store the distances. Then we run a second pruned BFS on the graph which includes the modified edge. The set of the affected nodes is the union of all nodes whose distance to either $u$ or $v$ is smaller in the graph that does include the modified edge.
+Finding the affected nodes on undirected graphs requires more computational effort. As illustrated in Figure~\ref{fig:affectedNodesUndirectedBfs}, those nodes can either have a different distance to $u$ or to $v$. In the undirected case, we basically run the algorithm from the directed case twice. Once we start the breadth-first searches from $u$ and and once from $v$. The set of the affected nodes is the union of all nodes whose distance to either $u$ or $v$ is different in $G^-$ and $G^{+}$.
 
 \begin{algorithm2e}[h!]
  \label{alg:affectedNodesDirected}
- \KwData{$G = (V, E), (u, v) \notin E$}
+ \KwData{$G = (V, E), (u, v)$: the modified edge}
  \KwResult{$A_G^f(u, v)$}
-   \tcc{like a normal BFS, but following incoming edges} 
-   $d \gets \texttt{ReverseBFS(G, v)}$ \label{alg:reverseBFSCall} \\
+   \tcc{Construct $G^-$ and $G^{+}$}
+   \eIf{$(u, v) \in E$}{
+   		$G^- \gets (V, E \setminus \{(u, v)\})$ \\
+   		$G^{+} \gets (V, E)$
+   }{
+   	    $G^- \gets (V, E)$ \\
+   	    $G^{+} \gets (V, E \cup \{(u, v)\})$
+   }
    
-   $G' \gets (V, E \cup \{(u, v)\})$ \label{alg:affectedNodesNewInstance} \\
+   \tcc{like a normal BFS, but following incoming edges}
+   $d^- \gets \texttt{ReverseBFS(G - (u, v), v)}$ \label{alg:reverseBFSCall} \\
    
-   $A_G^f(u, v) \gets$ \texttt{PrunedReverseBFS($G'$, $d$, $v$)}
+   $A_G^f(u, v) \gets$ \texttt{PrunedReverseBFS($G + (u, v)$, $d^-$, $v$)}
    
  \caption{Computing affected nodes in directed graphs.}
 \end{algorithm2e}
@@ -117,7 +126,7 @@ Finding the affected nodes on undirected graphs requires more computational effo
 
 \begin{algorithm2e}[h!]
  \label{alg:prunedReverseBFS}
- \KwData{$G = (V, E), d_{old}, s$}
+ \KwData{$G = (V, E), d^-, s$}
  \KwResult{$A_G^f(u, v)$}
    $A_G^f(u, v) \gets \emptyset$
    
@@ -134,7 +143,7 @@ Finding the affected nodes on undirected graphs requires more computational effo
        \If{$w$ is not marked as visited}{
          $d[w] \gets d[u] + 1$ \\
          Mark $w$ as visited \\
-         \If{$d_{old}[w] < d[w]$}{ \label{alg:reverseBFSPruning}
+         \If{$d^-[w] < d[w]$}{ \label{alg:reverseBFSPruning}
            $A_G^f(u, v) \gets A_G^f(u, v) \cup \{w\}$ \\
            Enqueue $w$ in $Q$
          }
@@ -151,7 +160,7 @@ Finding the affected nodes on undirected graphs requires more computational effo
 
 \begin{algorithm2e}[h!]
  \label{alg:prunedReverseBFSRemovals}
- \KwData{$G = (V, E), d_{old}, s, (u, v) \notin E$}
+ \KwData{$G = (V, E), d^-, s, (u, v) \notin E$}
  \KwResult{$A_G^f(u, v)$}
    $A_G^f(u, v) \gets \emptyset$
    
@@ -247,100 +256,33 @@ Finding the affected nodes on undirected graphs requires more computational effo
 \end{figure}
 
 \subsection{Dynamic Top-k closeness in complex networks}
-In the following sections, we will describe how our dynamic algorithm reproduces the results of the static algorithm in a more efficient manner by using existing knowledge of the graphs. Algorithm~\ref{alg:borassiDynamicInsertion} updates the $k$ most central nodes and their closeness centralities after an edge insertion.
+\label{sec:dynamicTopKOptimizations}
+In the following sections, we will describe how our dynamic algorithm reproduces the results of the static algorithm in a more efficient manner by using existing knowledge of the graphs.
+
 \subsubsection{Recomputing the number of reachable nodes}
-After an edge modification, it is possible that the number of reachable nodes changes for some nodes in the graph. The dynamic instance of the algorithm should store the connected component each node belongs to. In the case of an edge insertion in undirected graphs, the number of reachable nodes does not change for any node if $u$ and $v$ are in the same component. If they are in different components, the two components are merged and the number of reachable nodes is set to the total number of nodes in the merged component. In all other cases, including edge insertions in directed graphs, we compute the number of reachable nodes from scratch. There are algorithms that maintain strongly-connected components in the case of edge deletions~\cite{lkacki2013improved,chechik2016decremental}. However, we have not implemented them because the time to compute the number of reachable nodes is small compared to the total runtime for an update operation in most cases.
+After an edge modification, it is possible that the number of reachable nodes changes for some nodes in the graph. The dynamic instance of the algorithm should store the connected component each node belongs to. In the case of an edge insertion in undirected graphs, the number of reachable nodes does not change for any node if $u$ and $v$ are in the same component. If they are in different components, the two components are merged and the number of reachable nodes is set to the total number of nodes in the merged component. In all other cases, including edge insertions in directed graphs, we compute the number of reachable nodes (or an upper bound in directed graphs) from scratch. There are algorithms that maintain strongly-connected components in the case of edge removals~\cite{lkacki2013improved,chechik2016decremental}. However, we have not implemented them for this thesis.
 
 \subsubsection{Preserving still-valid information}
-The exact closeness centralities or computed upper bounds of nodes that are unaffected by an edge modification are still valid after the modification is applied. Therefore, nodes that previously belonged to the $k$ most central nodes can be re-inserted into the priority queue which manages the Top-k list.
+We keep a global data structure that stores either the exact closeness centrality or an upper bound for each node like in the static algorithm. During an update operation, we keep a priority queue with the $k$ most central nodes. The exact closeness centralities or computed upper bounds of nodes that are unaffected by an edge modification are still valid after the modification is applied. Therefore, nodes that have previously belonged to the $k$ most central nodes can be re-inserted into the priority queue that manages the Top-k list.
 
 \paragraph{Edge insertions}
-In the case of an edge insertion, the harmonic centrality of affected nodes can only increase. If there is a new member of the Top-k list after the edge insertion, its harmonic centrality must be larger than the old centrality of the old $k$-th most central node. The cutoff threshold for pruned breadth-first searches is set to this old centrality initially. The closeness centrality (or the upper bound) of each affected node is marked as invalid. 
+In the case of an edge insertion, the closeness centrality of affected nodes can only increase.  We recall that in the static algorithm, the breadth-first search for a given node is aborted if it is clear that the closeness centrality of this node cannot be larger than the closeness centrality of the $k$-th most central node, also denoted as $x_k$ in this thesis. If there is a new member of the Top-k list after the edge insertion, its closeness centrality must be larger than $x_k$ of the old graph. The closeness centrality (or the upper bound) of each affected node in the graph is initially marked as invalid. 
 
 \paragraph{Edge removals}
-In the case of an edge removal, the exact closeness centralities of affected nodes become invalid, but upper bounds of affected nodes are still valid. Consider a shortest path $u - v - w$ which is also the only shortest path of length $2$ between $u$ and $w$. If the edge $(u, v)$ is removed, the new shortest path will at least have length $3$. Now consider the harmonic centrality $h(u)$. The contribution of the node pair $(u, w)$ is $\frac{1}{d_G(u, w)} = \frac{1}{2}$ in the unmodified graph. After the edge is removed, the contribution is only $\frac{1}{d_{G'}(u, w)} = \frac{1}{3}$. Since an edge removal does not create any new shorter shortest paths between any pair of nodes, the exact closeness centrality of affected nodes will always be smaller than before. Therefore, all upper bounds of affected nodes are still valid, but now less tight than before. This also allows the following optimization in some cases: if none of the $k$ most central nodes is affected by an edge removal, the update algorithm can be aborted after the computation of the affected nodes. 
+In the case of an edge removal, the exact closeness centralities of affected nodes become invalid, but upper bounds of affected nodes are still valid. Consider a shortest path $u - v - w$ which is also the only shortest path of length $2$ between $u$ and $w$. If the edge $(u, v)$ is removed, the new shortest path will at least have length $3$. Now consider the harmonic closeness centrality $h(u)$. The contribution of the node pair $(u, w)$ is $\frac{1}{d_G(u, w)} = \frac{1}{2}$ in the unmodified graph. After the edge is removed, the contribution is only $\frac{1}{d_{G'}(u, w)} = \frac{1}{3}$. Since an edge removal does not create any new shorter shortest paths between any pair of nodes, the exact closeness centrality of affected nodes will always be smaller than before. Therefore, all upper bounds of affected nodes are still valid, but now less tight than before. This also allows the following optimization in some cases: if none of the $k$ most central nodes is affected by an edge removal, the update algorithm can be aborted after the computation of the affected nodes. 
 
 
 \subsubsection{Recomputing closeness centralities after edge insertions}
 \label{sec:dynamicComplexRecomputation}
-The dynamic algorithm has the same main loop that computes either the closeness centrality or an upper bound for each node. However, it only iterates over affected nodes in the first place. The static algorithm already only computes an upper bound for the closeness centrality for many nodes. It is possible that the computed upper bound for these nodes would not change due to the edge modification. In this section, we will describe Algorithm~\ref{alg:borassiDynamicInsertion} which updates the list of the $k$ most central nodes and their exact closeness centrality after an edge insertion.
+In this section, we will describe Algorithm~\ref{alg:borassiDynamicInsertion} which updates the list of the $k$ most central nodes and their exact closeness centrality after an edge insertion. 
 
-\paragraph{Skipping far-away nodes}
-Let $w$ be an arbitrary node in $G$ for which only an upper bound for its closeness centrality is known. Since the upper bounds are computed with a pruned breadth-first search, it is possible to store the cutoff level of this search. If the distance of $w$ to the edge modification $d_G^f(w, (u, v))$ is larger than the cutoff level (see Figure~\ref{fig:skipFarAwayNodes}), it is not necessary to run another pruned BFS. In this case, the search on the modified graph would be completely identical to the previous search on the old graph because the search would be aborted without visiting the modified edge $(u, v)$. Therefore, the dynamic algorithm can mark the old upper bound as valid and skip the expensive recomputation of the upper bound.
+The dynamic algorithm iterates over the affected nodes and recomputes their closeness centralities or an upper bound for their closeness centralities. We can expect that running the algorithm on the initial graph produces upper bounds instead of exact values for at least some of the nodes in the graph. In the following, we will present optimizations that allow us to update these upper bounds without running a new pruned BFS from these nodes. Another optimization allows us to skip nodes if they are far away from the edge insertion. If we cannot apply any of the optimizations, the dynamic algorithm simply performs a new pruned BFS starting from the given node. For algorithm that performs the pruned breadth-first searches in the dynamic case is similar to the one we have presented for the static case. It is outlined in Algorithm~\ref{alg:bfsCutDynamic}. The only difference to the static algorithm is that the dynamic algorithm also returns the level at which a pruned BFS has been aborted as part of the result tuple.
 
-\paragraph{Updating bounds of boundary nodes}
-This optimization can only be Let $w$ be a node in $G$ for which only an upper bound is known and whose distance to an edge insertion is exactly equal to the cutoff level of the BFS. Without loss of generality, we assume that $u$ is always the node closer to the chosen node $w$. This also means that $d(w, u) = d_{cutoff}(w)$. The scenario is shown in Figure~\ref{fig:cheapBoundUpdate}.
-
-First, we show that
-\begin{align*}
-	 d_G(w, u) - d_G(w, v) &\geq 2 \\
-	\iff  d_G(w, v) &\geq d_G(w, u) + 2 \\
-	                &= d_{cutoff}(w) + 2.
-\end{align*}
-If the distance in the old graph from $w$ to $u$ was the same as the distance from $w$ to $v$, $w$ would not have been affected by the edge insertion. This is the case because a new path between $w$ and $v$ using the edge $(u, v)$ will always have length $d(w, u) + 1$. This is contradicts the assumption that $d(w, u) = d(w, v)$.
-
-Secondly, if $d_G(w, u) - d_G(w, v) = 1$, then $w$ would also not have been affected by the edge insertion. Similar to the first case, a potential new shortest path between $w$ and $v$ using the edge $(u, v)$ will always have the length $d(w, u) + 1$. Therefore, this new shortest path will at best be as short as an already known shortest path in the old graph. Since the distance between $w$ and $v$ is not decreased by the inserted edge, $w$ would not be affected by the edge insertion. This is again a contradiction of our initial assumption that $w$ is affected.
-
-We recall that Equation~\ref{eq:harmonicClosenessUpperBound} is used to compute the upper bounds for the closeness centrality of a node during the pruned BFS starting from that node. With our preconditions that $d(w, u)$ is equal to the cutoff level and $d(w, v) \geq d(w, u) + 2 = d_{cutoff}(w) + 2 $, we can analyze how both $u$ and $v$ contribute to both the old and the new upper bound. Since we assume that $d(w, u) = d_{cutoff}(w)$, the contribution of $u$ to $\widetilde{h}(w)$ is $\frac{1}{d_{cutoff}(w)}$ and will not change due to the edge insertion.
-
-With $d(w, v) \geq d_{cutoff}(w) + 2$, we can deduce that the original contribution of $v$ to $\widetilde{h}(w)$ was $\frac{1}{d_{cutoff}(w) + 2}$. Since we insert $(u, v)$ into the graph, the new distance between $w$ and $v$ will be $d(w, u) + 1$. Thus, the new contribution of $v$ to $\widetilde{h}(w)$ is $\frac{1}{d_{cutoff}(w) + 1}$. In summary, we get
-\begin{align}
-	\widetilde{h}_{new}(w) = \widetilde{h}_{old}(w) - \frac{1}{d_{cutoff}(w) + 2} + \frac{1}{d_{cutoff}(w) + 1}.
-\end{align}
-This allows us to update the upper bound for the closeness centrality of $w$ cheaply and without a new pruned BFS.
-
-
-\begin{algorithm2e}[h!]
- \label{alg:borassiDynamicInsertion}
- \KwData{$G = (V, E), (u, v) \notin E$}
- \KwResult{A list with the $k$ nodes with the highest closeness}
- Update $r(v)\quad \forall v \in V$ \label{alg:dynamicInsertionPreprocessing}\\
- Compute the set of affected nodes $A(u, v)$ \\
- $d_G^f \gets $ array with the distances to the edge modification for each affected node \\
- Mark $h(w)$ as invalid for $w \in A(u, v)$ \\
- 
- $x_k \gets \texttt{Top.getMin()}$ \\
- \ForAll{$w \in \texttt{Top}$}{
- 	\If{$w \in A(u, v)$}{
- 	   \texttt{Top.remove($w$)}
- 	}
- }
-
- \ForAll{$w \in A(u, v)$}{ \label{alg:dynamicInsertionLoop}
-    
-    \uIf{$d_{cutoff}[w] < d_G^f[w]$}{
-      Mark $h(w)$ as valid \\
-    }
-    \uElseIf{$d_G^f[w] = d_{cutoff}[w] \land !\texttt{isExact}[w] \land \texttt{cutoffIsExact}[w]$}{
-      $h(w) \gets h(w) - \frac{1}{d_{cutoff}[w] + 2} + \frac{1}{d_{cutoff}[w] + 1}$ \\
-      Mark $h(w)$ as valid
-    } 
-    \uElse{
-      	$(h, \texttt{isExact}, \texttt{cutoffIsExact}, d_{cutoff}) \gets $ \texttt{BFSCut}($w, x_k$) \\
-  	
-  	    $h(w) \gets h$\\
-  	    $\texttt{isExact}(v) \gets \texttt{isExact}$\\ 
-  	    $\texttt{cutoffIsExact}(v) \gets \texttt{cutoffIsExact}$\\ 
-  	    $d_{cutoff}(w) \gets d_{cutoff}$ \\
-    }
-
-  	\If{$isExact \land h(w) > x_k$}{
-  	   \texttt{Top.insert($h$, $w$)} \\
-  	   \If{$\texttt{Top.size()} > k$}{
-	      \texttt{Top.removeMin()}
-	   }
-	   \If{$\texttt{Top.size()} = k$}{
-	     $x_k \gets \texttt{Top.getMin()}$
-	   }
-	}
- }
- \caption{Recomputation of the $k$ most central nodes after an edge insertion.}
-\end{algorithm2e}
 
 \begin{algorithm2e}[h!]
  \label{alg:bfsCutDynamic}
  \KwData{$G = (V, E), v, x_k$}
- \KwResult{A tuple $(h, \texttt{isExact}, \texttt{cutoffIsExact}, d_{cutoff})$ with $\texttt{isExact} = \texttt{false}$ if $h$ is only an upper bound for the exact harmonic centrality. \texttt{cutoffIsExact} is \texttt{true} if the search is aborted when a new level is reached (Line~\ref{alg:newLevelDynamic}).}
+ \KwResult{A tuple $(h, \texttt{isExact}, d_{cutoff})$ with $\texttt{isExact} = \texttt{false}$ if $h$ is only an upper bound for the exact harmonic closeness centrality.}
  Create queue $Q$ \\
  $Q$.enqueue($v$) \\
  Mark $v$ as visisted \\
@@ -353,7 +295,7 @@ This allows us to update the upper bound for the closeness centrality of $w$ che
    	 $r \gets r(u)$ \\
    	 $\widetilde{h} \gets h + \frac{\widetilde{\gamma}}{(d + 1) \cdot (d + 2)} + \frac{r - n_d}{d + 2}$ \label{alg:upperBoundUpdateDynamic} \\
    	 \If{$\widetilde{h} \leq x_k$}{
-   	   return $(\widetilde{h}, \texttt{false}, \texttt{true}, d)$
+   	   return $(\widetilde{h}, \texttt{false}, d)$
    	 }
    }
    \ForAll{$w \in N(u)$}{
@@ -374,15 +316,103 @@ This allows us to update the upper bound for the closeness centrality of $w$ che
      \uElseIf{$d(v, w) > 1 \land pred[u] \neq w$}{ \label{alg:boundAdjustmentDynamic}
      	$\widetilde{h} \gets \widetilde{h} - \frac{1}{d + 1} + \frac{1}{d + 2}$ \\
      	\If{$\widetilde{h} \leq x_k$}{
-     		return $(\widetilde{h}, \texttt{false}, \texttt{false}, d)$
+     		return $(\widetilde{h}, \texttt{false}, d)$
      	}
      }
    }
-   return $(h, \texttt{true}, \texttt{true}, d)$
+   return $(h, \texttt{true}, d)$
  }
  
  \caption{\texttt{BFSCut} in the dynamic case}
 \end{algorithm2e}
+
+\paragraph{Skipping far-away nodes}
+Let $w$ be an arbitrary node in $G$ for which only an upper bound for its closeness centrality is known. We recall that the static algorithm computes the upper bound for the closeness centrality with a pruned breadth-first search. Let $d_{cutoff}(w)$ denote the level at which the previous search was aborted. If the distance of $w$ to the edge modification $d_G^f(w, (u, v))$ is larger than the cutoff level (see Figure~\ref{fig:skipFarAwayNodes}), it is not necessary to run a new pruned BFS. In this case, the search on the modified graph would be completely identical to the previous search on the old graph because the search would be aborted without visiting the modified edge $(u, v)$. Notice that this assumption is only valid if the number of reachable nodes does not change for $w$ due to the edge insertion. If these conditions are met, the dynamic algorithm can mark the old upper bound as valid and skip the expensive recomputation of the upper bound.
+
+Notice that it is possible that the closeness centralities of some nodes will increase after an edge insertion. This can result in a larger closeness centrality of the $k$-th most central node. In this case, a new pruned BFS could be aborted earlier than before because the new threshold is higher. However, $d_{cutoff}(w)$ will never increase after an edge insertion. Therefore, we will sometimes run a new pruned BFS for a node where the new cutoff level is smaller than the distance to the edge insertion.
+
+If we remove edges from the graph, the closeness centralities of some nodes, potentially including the $k$-th most central node, will decrease. This could in theory lead to a later cutoff point for a new pruned BFS. As we will see later, the algorithm for edge removals either keeps the old upper bound or recomputes a new (lower) bound. If the bound is recomputed, we get a new cutoff level. Since we remove edges from the graph in this case, the upper bound obtained with a new pruned BFS up until the cutoff level can never be larger than the old one.
+
+\paragraph{Updating bounds of boundary nodes}
+Let $w$ be a node in $G$ for which only an upper bound is known and whose distance to an edge insertion is exactly equal to the cutoff level of the BFS. We then call $w$ \emph{boundary node}. Without loss of generality, we assume that $u$ is always the node closer to the chosen node $w$ and therefore that $d(w, u) = d_{cutoff}(w)$. This scenario is shown in Figure~\ref{fig:cheapBoundUpdate}.
+
+We will now show that the level difference between $u$ and $v$ was at least $2$ before the edge insertion. In consequence, there is one additional node at distance $d_{cutoff}(w) + 1$ after the edge insertion that was previously assumed to be at least at distance $d_{cutoff}(w) + 2$.
+
+\begin{proposition}
+\label{prop:minimumDistanceForCheapUpdate}
+	\begin{align*}
+	 	d_G(w, u) - d_G(w, v) &\geq 2
+	\end{align*}
+\end{proposition}
+\begin{proof}
+If the distance in the old graph from $w$ to $u$ was the same as the distance from $w$ to $v$, $w$ would not have been affected by the edge insertion. This is the case because a new path between $w$ and $v$ using the edge $(u, v)$ will always have length $d(w, u) + 1$. This is contradicts the assumption that $d(w, u) = d(w, v)$.
+
+Secondly, if $d_G(w, u) - d_G(w, v) = 1$, then $w$ would also not have been affected by the edge insertion. Similar to the first case, a potential new shortest path between $w$ and $v$ using the edge $(u, v)$ will always have the length $d(w, u) + 1$. Therefore, this new shortest path will at best be as short as an already known shortest path in the old graph. Since the distance between $w$ and $v$ is not decreased by the inserted edge, $w$ would not be affected by the edge insertion. This is again a contradiction of our initial assumption that $w$ is affected.
+\end{proof}
+
+The proposition can also be written as
+\begin{align}
+	d_G(w, v) &\geq d_G(w, u) + 2 = d_{cutoff}(w) + 2.
+\end{align}
+
+We recall that Equation~\ref{eq:harmonicClosenessUpperBound} is used to compute the upper bounds for the closeness centrality of a node during the pruned BFS starting from that node. Using Proposition~\ref{prop:minimumDistanceForCheapUpdate}, we can analyze how both $u$ and $v$ contribute to both the old and the new upper bound. Since we assume that $d(w, u) = d_{cutoff}(w)$, the contribution of $u$ to $\widetilde{h}(w)$ is $\frac{1}{d_{cutoff}(w)}$ and will not change due to the edge insertion.
+
+With $d(w, v) \geq d_{cutoff}(w) + 2$, we can deduce that the original contribution of $v$ to $\widetilde{h}(w)$ was $\frac{1}{d_{cutoff}(w) + 2}$. Since we insert $(u, v)$ into the graph, the new distance between $w$ and $v$ will be $d(w, u) + 1$. Thus, the new contribution of $v$ to $\widetilde{h}(w)$ is $\frac{1}{d_{cutoff}(w) + 1}$. In summary, we get
+\begin{align}
+	\widetilde{h}_{new}(w) = \widetilde{h}_{old}(w) - \frac{1}{d_{cutoff}(w) + 2} + \frac{1}{d_{cutoff}(w) + 1} \label{eq:cheapBoundaryUpdate}.
+\end{align}
+This allows us to update the upper bound for the closeness centrality of $w$ cheaply and without a new pruned BFS if the updated bound is smaller than the $k$-th largest closeness centrality.
+
+
+\begin{algorithm2e}[h!]
+ \label{alg:borassiDynamicInsertion}
+ \KwData{$G = (V, E), (u, v) \notin E$}
+ \KwResult{A list with the $k$ nodes with the highest closeness}
+ $r_{old}(v) \gets r(v) \quad \forall v \in V$ \\
+ Update $r(v)\quad \forall v \in V$ \label{alg:dynamicInsertionPreprocessing}\\
+ Compute the set of affected nodes $A(u, v)$ \\
+ $d_G^f \gets $ array with the distances to the edge modification for each affected node \\
+ 
+ $x_k \gets \texttt{Top.getMin()}$ \\
+ \ForAll{$w \in \texttt{Top}$}{
+ 	\If{$w \in A(u, v)$}{
+ 	   \texttt{Top.remove($w$)}
+ 	}
+ }
+
+ \ForAll{$w \in A(u, v)$}{ \label{alg:dynamicInsertionLoop}
+    
+    
+    \uIf{$d_{cutoff}(w) < d_G^f(w) \land \texttt{!isExact}(w) \land r_{old}(w) = r(w)$}{
+        \tcc{The inserted edge is beyond the cutoff threshold of the original pruned BFS from $w$. We do not need to do anything to recompute $h(w)$ in this case.}
+    }
+    \uElseIf{$d_G^f(w) = d_{cutoff}(w) \land !\texttt{isExact}(w) \land r_{old}(w) = r(w)$}{
+        \tcc{$w$ is a boundary node and $h(w)$ can be updated cheaply with Equation~\ref{eq:cheapBoundaryUpdate}.}
+      $h(w) \gets h(w) - \frac{1}{d_{cutoff}[w] + 2} + \frac{1}{d_{cutoff}[w] + 1}$ \\
+    } 
+    \uElse{
+    	\tcc{No optimization is applicable, we have to perform a new pruned BFS-}
+      	$(h, \texttt{isExact}, d_{cutoff}) \gets $ \texttt{BFSCut}($w, x_k$) \\
+  	
+  	    $h(w) \gets h$\\
+  	    $\texttt{isExact}(v) \gets \texttt{isExact}$\\f
+  	    $d_{cutoff}(w) \gets d_{cutoff}$ \\
+    }
+
+  	\If{$isExact \land h(w) > x_k$}{
+  	   \texttt{Top.insert($h$, $w$)} \\
+  	   \If{$\texttt{Top.size()} > k$}{
+	      \texttt{Top.removeMin()}
+	   }
+	   \If{$\texttt{Top.size()} = k$}{
+	     $x_k \gets \texttt{Top.getMin()}$
+	   }
+	}
+ }
+ \caption{Recomputation of the $k$ most central nodes after an edge insertion.}
+\end{algorithm2e}
+
+
 
 \begin{figure}[h!]
 \centering
@@ -419,7 +449,7 @@ This allows us to update the upper bound for the closeness centrality of $w$ che
     \draw[dotted,very thick] (d1) to [bend left] (d2);
     
 \end{tikzpicture}
-\caption{Skipping far-way nodes}{}
+\caption{Skipping far-way nodes}{The dotted line divides the nodes which were visited during the pruned BFS from $w$ from the nodes whose distance was only estimated with a lower bound. If the modified edge is beyond the dotted line, it does not reduce the distance of $w$ to any node for which an exact distance was computed with the pruned BFS.}
 \label{fig:skipFarAwayNodes}
 \end{figure}
 
@@ -457,24 +487,29 @@ This allows us to update the upper bound for the closeness centrality of $w$ che
     \draw[dotted,very thick] (d1) to [bend left] (d2);
     
 \end{tikzpicture}
-\caption{Improving upper bounds without an additional BFS}{}
+\caption{Improving upper bounds without an additional BFS}{The dotted line divides the nodes which were visited during the pruned BFS from $w$ from the nodes whose distance was only estimated with a lower bound. If $u$ is exactly on the last level before the boundary and $v$ is beyond the boundary, the impact of that edge insertion can be computed without performing a new pruned BFS.}
 \label{fig:cheapBoundUpdate}
 \end{figure}
 
 \subsubsection{Recomputing closeness centralities after edge removals}
-As we have already discussed earlier, the upper bounds of affected nodes remain valid after an edge is removed from the graph. Algorithm~\ref{alg:borassiDynamicRemoval} outlines the steps necessary to update the $k$ most central nodes and their closeness centralities after an edge removal. As in the edge insertion case, the algorithm first computes the set of affected nodes and marks their closeness centralities as invalid. The algorithm always keeps a list of all nodes in the graph sorted by their closeness centrality or an upper bound in decreasing order. The algorithm iterates over this list (Line~\ref{alg:dynamicRemovalLoop}). The algorithm starts with an empty priority queue \texttt{Top} which manages the $k$ most central nodes  (Line~\ref{alg:dynamicRemovalTop}).
+\label{sec:dynamicTopClosenessRemoval}
+As we have already discussed earlier, the upper bounds of affected nodes remain valid after an edge is removed from the graph. Algorithm~\ref{alg:borassiDynamicRemoval} outlines the steps necessary to update the $k$ most central nodes and their closeness centralities after an edge removal. As in the edge insertion case, the algorithm first computes the set of affected nodes. Since the closeness centralities of affected nodes can only decrease, existing upper bounds stay valid and exact closeness centralities become upper bounds. Therefore, we mark the current closeness centrality of each affected node as an upper bound in Line~\ref{alg:dynamicRemovalNewUpperBounds}. The algorithm starts with an empty priority queue \texttt{Top} which manages the $k$ most central nodes  (Line~\ref{alg:dynamicRemovalTop}).
 
-The algorithm iterates over each node $w$ in the graph. If \texttt{Top} already contains $k$ nodes and the closeness centrality of the $k$-th node is larger than the old closeness centrality or upper bound of $w$, the loop can be aborted (Line~\ref{alg:dynamicRemovalBreak}). This is possible since edge removals can only reduce the closeness centralities of nodes in the graph. Therefore, there cannot be any nodes that ``jump the queue'' as in the case of an edge insertion.
+In contrast to the algorithm for edge insertions, the algorithm for edge removals iterates over all the nodes in the graph in decreasing order of their previous closeness centrality (Line~\ref{alg:dynamicRemovalLoop}). If \texttt{Top} already contains $k$ nodes and the closeness centrality of the $k$-th node is larger than the old closeness centrality or upper bound of $w$, the loop can be aborted (Line~\ref{alg:dynamicRemovalBreak}). This is possible since edge removals can only reduce the closeness centralities of nodes in the graph. Therefore, there cannot be any nodes that ``jump the queue'' as in the case of an edge insertion.
 
-If the there is an exact value for the closeness centrality of $w$ and if it still valid, it can be added to \texttt{Top} immediately and it is not necessary to start a new pruned BFS. Otherwise, the algorithm executes a pruned BFS to obtain a new upper bound or – in most cases – the exact closeness centrality for $w$. If the BFS yields the exact closeness centrality, $w$ is added to \texttt{Top}. 
+If the there is an exact value for the closeness centrality of $w$ and, it can be added to \texttt{Top} immediately and it is not necessary to start a new pruned BFS. Otherwise, the algorithm executes a pruned BFS to obtain a new upper bound or the exact closeness centrality for $w$. If the BFS yields the exact closeness centrality, $w$ is added to \texttt{Top}.
+
 \begin{algorithm2e}[h!]
  \label{alg:borassiDynamicRemoval}
  \KwData{$G = (V, E), (u, v) \notin E$}
  \KwResult{A list with the $k$ nodes with the highest closeness}
  Update $r(v)\quad \forall v \in V$ \label{alg:dynamicRemovalPreprocessing}\\
  Compute the set of affected nodes $A(u, v)$ \\
- Mark $h(w)$ as invalid for $w \in A(u, v)$ \\
  
+ \ForEach{$w \in A(u, v)$}{
+   \texttt{isExact[$w$]} $ \gets \texttt{false}$ \label{alg:dynamicRemovalNewUpperBounds}
+ }
+  
  $x_k \gets 0$ \\ 
  $\texttt{Top} \gets $ empty priority queue \label{alg:dynamicRemovalTop} \\
  
@@ -485,7 +520,7 @@ If the there is an exact value for the closeness centrality of $w$ and if it sti
       \texttt{break;}
     }
     
-    \If{$h(w)$ is still valid}{
+    \If{\texttt{!isExact[$w$]}}{
        \texttt{Top.insert($h(w)$, $w$)} \\
   	   \If{$\texttt{Top.size()} > k$}{
 	      \texttt{Top.removeMin()}
@@ -497,10 +532,9 @@ If the there is an exact value for the closeness centrality of $w$ and if it sti
     }
 
     \tcc{Recompute the closeness centrality of the node}
-    $(h, \texttt{isExact}, \texttt{cutoffIsExact}, d_{cutoff}) \gets $ \texttt{BFSCut}($w, x_k$) \\
+    $(h, \texttt{isExact}, d_{cutoff}) \gets $ \texttt{BFSCut}($w, x_k$) \\
     $h(w) \gets h$\\
-    $\texttt{isExact}(v) \gets \texttt{isExact}$\\ 
-    $\texttt{cutoffIsExact}(v) \gets \texttt{cutoffIsExact}$\\ 
+    $\texttt{isExact}(v) \gets \texttt{isExact}$\\
     $d_{cutoff}(w) \gets d_{cutoff}$ \\
     
     \If{$isExact \land h > x_k$}{
@@ -519,25 +553,29 @@ If the there is an exact value for the closeness centrality of $w$ and if it sti
 \FloatBarrier
 
 \subsection{Dynamic closeness centrality in networks with large diameters}
-Edge modifications in networks with large diameter often affect almost every node in the graph. On top of that, the algorithm from Section~\ref{sec:largeDiameterStatic} always computes the exact closeness centrality of each processed node. Therefore, there is no cutoff level for nodes that could be used to skip far-away nodes after an edge insertion or to update the upper bounds of boundary nodes cheaply. However, it is possible to compute an upper bound for the \emph{improvement} of the closeness centrality of each node after an edge insertion.
+We recall that the algorithm for complex networks performs a pruned BFS from every single node in the graph. On the contrary, the algorithm for street networks always performs a complete BFS for some nodes in order to compute upper bounds for all the other nodes in the graph (Section~\ref{sec:largeDiameterStatic}, Algorithm~\ref{alg:streetNetworksStatic}). Since there is either a complete BFS or no BFS at all for each node, there is no cutoff level that could be used to skip far-away nodes after an edge insertion or to update the upper bounds of boundary nodes cheaply. However, it is possible to compute an upper bound for the \emph{improvement} of the closeness centrality of each node after an edge insertion. In the case of edge removals, we use the same algorithm for street networks as we do for complex networks (see Section~\ref{alg:dynamicTopClosenessRemoval}).
 
 \subsubsection{Level-based improvement bounds}
-Let $(u, v)$ denote an edge that is inserted into a graph $G$ to create $G'$. We will at first only consider directed graphs, but the optimization can be easily adapted to undirected graphs by executing the same steps for both $u$ and $v$.  Let $S_{x} = \{t : d_{G'}(x, t) < d_G(x, t)\}$ denote the set of \emph{affected sink nodes}, i.e. the set of endpoints of paths starting in $x$ that are shorter in $G'$ than in $G$. Let $\Phi_{G}^i = \{t : d_G(u, t) = i\}$ denote the set of nodes with distance $i$ from the node $u$ in $G$, $\Phi_{G'}î$ denotes the same set in $G'$.
+\label{sec:levelBasedImprovementBounds}
+Let $(u, v)$ denote an edge that is inserted into a graph $G$ to create $G'$. We will at first only consider directed graphs, but the optimization can be easily adapted to undirected graphs by executing the same steps for both $u$ and $v$.  Let $S_{x} = \{t : d_{G'}(x, t) < d_G(x, t)\}$ denote the set of \emph{affected sink nodes} of $x$, i.e. the set of endpoints of paths starting in $x$ that are shorter in $G'$ than in $G$. Let $\Phi_{G}^i = \{t : d_G(u, t) = i\}$ denote the set of nodes with distance $i$ from node $u$ in $G$, $\Phi_{G'}î$ denotes the same set in $G'$.
 
-As we already noted earlier, each new shortest path in the graph must contain the edge $(u, v)$. For any new path $x - ... - u - v - ... - t$ there always is a new path $u - v - ... - t$. On the other hand, there could be a node $x$ which already has a shorter path that does not use the edge $(u, v)$. to at least one of the sink nodes of $u$. Therefore, $|S_x| \leq |S_u|$ for all $x \in V \setminus \{u\}$.
+As we already noted earlier, each new shortest path in the graph must contain the edge $(u, v)$. For any new path $x - ... - u - v - ... - t$ the subpath $u - v - ... - t$ is also a new shortest path. On the other hand, there could be a node $x$ which already has a shorter path to at least one of the sink nodes of $u$ that does not use the edge $(u, v)$. Therefore, $S_x \subseteq S_u$ for all $x \in V \setminus \{u\}$.
 
-The improvement for the closeness centrality of $u$ is 
+\begin{definition}
+The improvement for the closeness centrality of $u$ after the insertion of the edge $(u, v)$ is 
 \begin{align}
 	h_{impr}(u) &= h_{new}(u) - h_{old}(u) \nonumber \\
 	            &= \sum_{t \in S_u}{\frac{1}{d_{G'}(u, t)} - \frac{1}{d_G(u, t)}} \nonumber \\
-	            &= \sum_{i}{\frac{1}{i} \cdot \left(\Phi_{G'}^i \cdot - \Phi_G^i\right)} \label{eq:levelImprovementBound}.
+	            &= \sum_{i}{\frac{1}{i} \cdot \left(\Phi_{G'}^i - \Phi_G^i\right)} \label{eq:levelImprovementBound}.
 \end{align}
+\end{definition}
+
 We will now show that $h_{impr}(u)$ is an upper bound for the improvement of the closeness centrality of \emph{all} affected nodes. First, we consider the contribution to the improvement of an affected node $x$ and a corresponding sink node $w$. Let $h_{impr}(x, w) = \frac{1}{d_{G'}(x, w)} - \frac{1}{d_{G}(x, w)} $ denote the improvement of the contribution of the node pair $(x, w)$ to the closeness centrality of $x$. We want to show that 
 \begin{align}
 	h_{impr}(u, w) &\geq h_{impr}(x, w) \nonumber \\
 	\iff \frac{1}{d_{G'}(u, w)} - \frac{1}{d_{G}(u, w)} &\geq \frac{1}{d_{G'}(x, w)} - \frac{1}{d_{G}(x, w)} \label{eq:contributionImprovement}.
 \end{align}
-In the old graph, a shortest path between $x$ and $w$ either contains $u$ or it does not. In either case, $d_G(x, w) > d_G(u, w)$ because otherwise $x$ would not be an affected node. Since the new shortest path will contain the edge $(u, v)$, we also know that $d_{G'}(x, w) > d_{G'}(u, w)$. However, we cannot guarantee that $d_G(u, w) < d_G(x, w)$, since there could be a shorter path from $x$ to $w$ that does not contain $u$. We rewrite Equation~\ref{eq:contributionImprovement}
+In the old graph, a shortest path between $x$ and $w$ either contains $u$ or it does not. In either case, $d_G(x, w) > d_G(u, w)$ because otherwise $x$ would not be an affected node. Since the new shortest path will contain the edge $(u, v)$, we also know that $d_{G'}(x, w) > d_{G'}(u, w)$. However, we cannot guarantee that $d_G(u, w) < d_G(x, w)$, since there could be a shorter path from $x$ to $w$ in $G$ that does not contain $u$. We rewrite Equation~\ref{eq:contributionImprovement}
 \begin{align}
     \frac{1}{d_{G'}(u, w)} &&-&& \frac{1}{d_{G}(u, w)} &&\geq && \frac{1}{d_{G'}(x, w)} &&-&& \frac{1}{d_{G}(x, w)} \nonumber \\ 
 	\frac{1}{o} &&-&& \frac{1}{o + p} &&\geq && \frac{1}{o + q} &&-&& \frac{1}{o + q + r} \label{eq:contributionImprovementRewritten}
@@ -552,7 +590,7 @@ Finally, we get
 \end{align}
 which holds for $o, p, q > 0$. Since we now know that $h_{impr}(x, w) \leq h_{impr}(u, w)$ for any affected node $x$ and a given sink node $w$, and that $|S_x| \leq |S_u|$, we can conclude that $h_{impr}(x) \leq h_{impr}(u)$ for any affected node $x$. 
 
-We can improve this upper bound for $h_{impr}(x)$ further. We know that the new shortest path between $x$ and $w$ contains the inserted edge $(u, v)$, and thus $d_{G'}(x, w) = d_{G'}(x, u) + d_{G'}(u, w)$. Equation~\ref{eq:levelImprovementBound} can be used to compute the improvement of $u$. However, this bound is not as tight as it could be for nodes which are further away from the edge insertion than $u$. For instance, it does make a larger difference for the harmonic centrality if the distance between two nodes changes from $3$ to $2$ than it does if the distance changes from $8$ to $7$, since $\frac{1}{2} - \frac{1}{3} > \frac{1}{7} - \frac{1}{8}$. We can adapt Equation~\ref{eq:levelImprovementBound} to provide an upper bound for the improvement for nodes with distance $j$ to the edge insertion:
+We can improve this upper bound for $h_{impr}(x)$ further. We know that the new shortest path between $x$ and $w$ contains the inserted edge $(u, v)$, and thus $d_{G'}(x, w) = d_{G'}(x, u) + d_{G'}(u, w)$. Equation~\ref{eq:levelImprovementBound} can be used to compute the improvement of $u$. However, this bound is not as tight as it could be for nodes which are further away from the edge insertion than $u$. For instance, it does make a larger difference for the harmonic closeness centrality if the distance between two nodes changes from $3$ to $2$ than it does if the distance changes from $8$ to $7$, since $\frac{1}{2} - \frac{1}{3} > \frac{1}{7} - \frac{1}{8}$. We can adapt Equation~\ref{eq:levelImprovementBound} to provide an upper bound for the improvement for nodes with distance $j$ to the edge insertion:
 \begin{align}
 	h_{impr,LB}(j) = \sum_{i}{\frac{1}{i + j} \cdot \left(\Phi_{G'}^i \cdot - \Phi_G^i\right)}.
 \end{align}

@@ -3,12 +3,9 @@
 
 Computing the exact closeness centrality of each node in a graph requires solving the \emph{all-pair-shortest-path} (APSP) problem . A simple approach is to compute a breadth-first search (or Dijkstra's algorithm) from each node. This results in a time complexity of $\mathcal{O}(|V| \cdot (|V| + |E|))$ for unweighted graphs and $\mathcal{O}(|V| \cdot (|V|\log{|V|} + |E|))$ for weighted graphs. The Floyd-Warshall algorithm has a time complexity of $\mathcal{O}(n^3)$~\cite{Floyd:1962:A9S:367766.368168}; Johnsons's algorithm for weighted graphs without negative cycles has a time complexity of $\mathcal{O}(|V| \cdot (|V|\log{|V|} + |E|))$~\cite{Johnson:1977:EAS:321992.321993}. There are also algorithms that are based on Fast Matrix Multiplication~\cite{zwick2002all,williams2012multiplying} which solve the problem in $\mathcal{O}(n^{2.3727})$. In practice, methods using graph traversal such as breadth-first search or Dijkstra's algorithm are preferred because real-world graphs are often sparse. Fast Matrix Multiplication algorithms also require more memory. 
 
-\section{Efficient algorithms for closeness centrality}
-\label{sec:closenessAlgorithms}
-
 There have been some ideas to reduce the effort to compute closeness centralities in large networks.
 
-\subsection{Approximation of closeness centrality}
+\section{Approximation of closeness centrality}
 Eppstein and Wang propose a fast approximation algorithm in~\cite{eppstein2001fast} for large networks exhibiting the \emph{small world phenomenon}. It provides an $(1 + \epsilon)$-approximation in near-linear time. The algorithm works as follows:
 
 \begin{enumerate}
@@ -21,17 +18,17 @@ Eppstein and Wang propose a fast approximation algorithm in~\cite{eppstein2001fa
 \end{enumerate}
 Eppstein and Wang show that the expected value of $\frac{1}{\hat{c}_u}$ is equal to $\frac{1}{c_u}$. Using Hoeffding's bound, they also show that for $k = \mathcal{O}(\frac{\log{n}}{\epsilon^2})$ the additive error is at most $\Delta \epsilon$ with high probability, where $\Delta$ denotes the diameter of the graph. The total runtime of the algorithm is $\mathcal{O}\left(\frac{\log{n}}{\epsilon^2} (n \log{n} + m)\right)$ for weighted graphs. For unweighted graphs it is $\mathcal{O}\left(\frac{\log{n}}{\epsilon^2} \cdot (n + m)\right)$.
 
-\subsection{Top-k closeness centrality}
+\section{Top-k closeness centrality}
 \label{sec:topKClosenessComplex}
 For some real-world applications, it is unnecessary to know the exact closeness centrality and the exact ranking of unimportant nodes. In these cases, it might be enough to compute a list of the $k$ nodes with the highest exact closeness centrality. For all the other nodes it is enough to provide an upper bound that is lower than the exact closeness centrality of the $k$-th most central node.
 
-Borassi et al. propose an efficient algorithm for the problem in \cite{borassi2015fast} which works especially well on complex networks. Angriman presents an adaptation of the algorithms to work with harmonic centrality~\cite{angriman2016efficient}. Bergamini et al. present some modifications for street networks (i.e. graphs with large diameter) in \cite{bergamini2016computing}. Since the dynamic algorithm presented in this thesis is based on these algorithms, we will provide detailed descriptions and analysis. The following explanation is based on the version of the algorithm for harmonic centrality to avoid redundancy and since it is easily applicable to disconnected graphs. However, the adaptation of these algorithms to closeness centrality is fairly straightforward. 
+Borassi et al. propose an efficient algorithm for the problem in \cite{borassi2015fast} which works especially well on complex networks. Angriman presents an adaptation of the algorithms to work with harmonic closeness centrality~\cite{angriman2016efficient}. Bergamini et al. present some modifications for street networks (i.e. graphs with large diameter) in \cite{bergamini2016computing}. Since the dynamic algorithm presented in this thesis is based on these algorithms, we will provide detailed descriptions and analysis. The following explanation is based on the version of the algorithm for harmonic closeness centrality to avoid redundancy and since it is easily applicable to disconnected graphs. However, the adaptation of these algorithms to closeness centrality is fairly straightforward. 
 
-\subsubsection{Upper bounds for the closeness centrality of a node}
+\subsection{Upper bounds for the closeness centrality of a node}
 \label{sec:borassiUpperBound}
 The algorithm by Borassi et al. is briefly outlined in Algorithm~\ref{alg:borassiStatic}. The main idea is to run a BFS from each node in the graph, but abort the search once it is clear that the node does not belong to the $k$ nodes with highest closeness. During the BFS from a specific node $v$, the algorithm keeps track of an upper bound $\widetilde{h}(v)$ for the harmonic closeness of that node.
 
-For that purpose, the algorithm keeps track of the current level $d$ of the search, that is the current distance to the source node $v$ of the search. When the BFS reaches a new level, the upper bound $\widetilde{h}(v)$ is recomputed. If the new upper bound is smaller than the known exact harmonic centrality of the $k$-th node in the list, the search is aborted. 
+For that purpose, the algorithm keeps track of the current level $d$ of the search, that is the current distance to the source node $v$ of the search. When the BFS reaches a new level, the upper bound $\widetilde{h}(v)$ is recomputed. If the new upper bound is smaller than the known exact harmonic closeness centrality of the $k$-th node in the list, the search is aborted. 
 
 Let $\Gamma_d$ denote the set of nodes on level $d$ from $v$, $\gamma_d$ the number of nodes on level $d$, i.e. $\gamma_d = |\Gamma_d|$. For each level, the algorithm computes an upper bound $\widetilde{\gamma}_{d+1} = \sum_{u \in \Gamma_d}{deg(u)}$ for the number of nodes on level $d + 1$. Let $r(v)$ denote the number of nodes reachable from $v$. Let $n_d$ denote the number of nodes up to level $d$. Let $h_d(v)$ denote the harmonic closeness based on all nodes up to level $d$ from $v$, i.e. $h_d(v) = \sum_{d(v, u) \leq d}{\frac{1}{d(v, u)}}$.
 
@@ -40,7 +37,7 @@ During the BFS, the algorithms sums up the inverse distances of visited nodes. A
 	h(v) \leq h'(v) = h_d(v) + \frac{\gamma_{d+1}}{d+1} + \frac{r(v) - n_{d+1}}{d+2}.
 \end{align}
 
-Basically, all nodes on level $d + 1$ contribute $\frac{1}{d+1}$ to the harmonic centrality. All remaining unvisited nodes have at least distance $d + 2$.
+Basically, all nodes on level $d + 1$ contribute $\frac{1}{d+1}$ to the harmonic closeness centrality. All remaining unvisited nodes have at least distance $d + 2$.
 
 Since $n_{d + 1} = n_d + \gamma_{d+1}$, we can write
 \begin{align}
@@ -54,7 +51,7 @@ We can now replace $\gamma_{d+1}$ with its upper bound $\widetilde{\gamma}_{d+1}
   \widetilde{h}(v)   &= h_d(v) + \frac{\widetilde{\gamma}_{d+1}}{(d+1) \cdot (d+2)} + \frac{r(v) - n_{d}}{d+2} \label{eq:harmonicClosenessUpperBound}
   \end{align}
 
-\subsubsection{Computing the number of reachable nodes}
+\subsection{Computing the number of reachable nodes}
 \label{sec:reachableNodes}
 The number of reachable nodes $r(v)$ in Equation~\ref{eq:harmonicClosenessUpperBound} can be computed in a preprocessing step. For undirected graphs, the number of reachable nodes from $v$ is equal to the size of the connected component containing $v$. Algorithm~\ref{alg:connectedComponents} computes the number of reachable nodes for each node in $\mathcal{O}(n + m)$ with a single BFS.
 
@@ -95,13 +92,13 @@ Since the components are traversed in reverse topological order, the upper bound
  \caption{Computing connected components in an undirected graph}
 \end{algorithm2e}
 
-\subsubsection{Pruned breadth-first search}
+\subsection{Pruned breadth-first search}
 In order to compute the closeness centrality of a single node in an unweighted graph, a complete breadth-first search starting from that node is necessary. The algorithm only requires the exact closeness centrality of the $k$ most central nodes. Therefore, the breadth-first searches can be aborted early for many nodes, once the upper bound obtained with Equation~\ref{eq:harmonicClosenessUpperBound} is smaller than the exact closeness centrality of the $k$-th most central node among the already processed nodes. Algorithm~\ref{alg:bfsCutStatic} outlines the steps necessary to perform such a pruned BFS. The algorithm is structured like a standard BFS, but also keeps track of the closeness centrality of the source node. The algorithm sums the inverse distances of all visited nodes in $h$ (Line~\ref{alg:inverseDistanceSum}). Once the BFS reaches a new level (Line~\ref{alg:newLevel}), $\widetilde{h}$ is updated (Line~\ref{alg:upperBoundUpdate}). If the new upper bound is smaller than the known exact closeness $x_k$ of the $k$-th node, the algorithm returns with the last computed upper bound and a flag that indicates that the value is not exact. The algorithm also keeps track of an upper bound $\widetilde{\gamma}$ for the number of nodes on level $d + 1$ by summing the out-degrees of all nodes on level $d$ (Line~\ref{alg:gammaUpdateDirected} and Line~\ref{alg:gammaUpdateUndirected}). If the search encounters a node $w$ that has already been marked as visited, that node must be on a level $l < d$. It is then possible to compute a new, lower upper bound $\widetilde{h}$ in some cases (Line~\ref{alg:boundAdjustment}).
 
 \begin{algorithm2e}[h!]
  \label{alg:bfsCutStatic}
  \KwData{$G = (V, E), v, x_k$}
- \KwResult{A tuple $(h, isExact)$ with $isExact = $\texttt{false} if $h$ is only an upper bound for the exact harmonic centrality.}
+ \KwResult{A tuple $(h, isExact)$ with $isExact = $\texttt{false} if $h$ is only an upper bound for the exact harmonic closeness centrality.}
  Create queue $Q$ \\
  $Q$.enqueue($v$) \\
  Mark $v$ as visisted \\
@@ -145,7 +142,7 @@ In order to compute the closeness centrality of a single node in an unweighted g
  \caption{BFScut()}
 \end{algorithm2e}
 
-\subsubsection{Algorithm outline}
+\subsection{Algorithm outline}
 Algorithm~\ref{alg:borassiStatic} is used to compute the list of the $k$ nodes with the highest closeness in $G$. The preprocessing in Line~\ref{alg:borassiStaticPreprocessing} is used to compute the number of reachable nodes for each node in the graph in linear time (see Section~\ref{sec:reachableNodes}). The algorithm then iterates over all nodes in decreasing order of degree (Line~\ref{alg:borassiLoop}) and starts a pruned BFS from each node. If the pruned BFS returns an exact closeness value, and if the value is larger than the current $k$-th largest value, it can be added to the list with the most central nodes. $x_k$, representing the $k$-th largest value, can then also be updated.
 
 
@@ -176,12 +173,12 @@ Algorithm~\ref{alg:borassiStatic} is used to compute the list of the $k$ nodes w
  \caption{Static computation of the $k$ nodes with the highest closeness}
 \end{algorithm2e}
 
-\subsubsection{Networks with large diameter}
+\subsection{Networks with large diameter}
 \label{sec:largeDiameterStatic}
 The previously described algorithm works well for complex (social) networks with small diameter. Bergamini et al. present a different approach to solve the problem faster on networks with large diameter, for instance street networks~\cite{bergamini2016computing}. The basic idea is to always run a complete breadth-first search from a source node and then use the number of nodes on each level to compute upper bounds for the closeness centrality of each other node in the graph. The nodes are kept in a list sorted in decreasing order by the corresponding upper bound for their closeness centrality. We provide a detailed explanation of this strategy in the following paragraphs. 
 
 \paragraph{Level-based upper bounds}
-It is possible to compute upper bounds for the closeness centrality of all nodes in a graph with a single BFS. Let $G$ denote an undirected graph and $s$ the source node of the BFS. A node $v$ is on level $i$ ($l(v) = i$) if $d(s, v) = i$ and we write $v \in \Gamma_i(s) \iff d(s, v) = i$ (see Section~\ref{sec:borassiUpperBound}). The distance between two arbitrary nodes $v \in \Gamma_i(s)$ and $w \in \Gamma_j(s)$ for $i \leq j$ is at least $j - i$. If $d(v, w)$ was smaller than $j - i$, $w$ would have been discovered earlier and its level would be $i + d(v, w) < j$. This is a contradiction to the assumption that $w$ is on level $j$. With this discovery, it is possible to obtain an upper bound for the harmonic closeness of each node $v \in V$:
+It is possible to compute upper bounds for the closeness centrality of all nodes in a graph with a single BFS. Let $G$ denote an undirected graph and $s$ the source node of the BFS. A node $v$ is on level $i$ ($l(v) = i$) if $d(s, v) = i$ and we write $v \in \Gamma_i(s) \iff d(s, v) = i$ (see Section~\ref{sec:borassiUpperBound}). The distance between two arbitrary nodes $v \in \Gamma_i(s)$ and $w \in \Gamma_j(s)$ for $i \leq j$ is at least $j - i$. If $d(v, w)$ was smaller than $j - i$, $w$ would have been discovered earlier and its level would be $i + d(v, w) < j$. This is a contradiction to the assumption that $w$ is on level $j$. Using this property, it is possible to obtain an upper bound for the harmonic closeness of each node $v \in V$:
 \begin{align*}
 	h(v) \leq \widetilde{h}(v) = \sum_{w \in R(s)}{\left| \frac{1}{d(s, w)} - \frac{1}{d(s, v)} \right| }.
 \end{align*}
