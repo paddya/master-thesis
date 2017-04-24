@@ -100,13 +100,13 @@ Our experiments cover several ``dimensions'':
 \end{itemize}
 
 \paragraph{Edge insertions}
-For our edge insertion experiments, we select 100 edges at random from the base graph and remove them. The resulting graph is the initial graph on which we initialize the dynamic algorithm. We then add back the removed edges one-by-one and measure the update time of the dynamic algorithm. We also create a separate instance of the algorithm and measure the time it requires to run the static algorithm after each edge insertion as a reference. With the update time and the reference time, we can compute the speedup of the dynamic algorithm compared to the static algorithm. In the process, we also collect information about the effectiveness of the various optimization strategies for complex networks we have proposed in Section~\ref{sec:dynamicTopKOptimizations}. In all our experiments, we compare our dynamic algorithm with the static one with $k = 1, 10, 100$.
+For our edge insertion experiments, we select 100 edges at random from the base graph and remove them. The resulting graph is the initial graph on which we initialize the dynamic algorithm. We then add back the removed edges one-by-one and measure the update time of the dynamic algorithm. We also create a separate instance of the algorithm and measure the time it requires to run the static algorithm after each edge insertion as a reference. With the update time and the reference time, we can compute the speedup of the dynamic algorithm compared to the static algorithm. In the process, we also collect information about the effectiveness of the various optimization strategies for complex networks we have proposed in Section~\ref{sec:dynamicTopKOptimizations}. In all our experiments, we compare our dynamic algorithm with the static one with  $k \in \{1, 10, 100\}$.
 
 \paragraph{Edge removals}
 To measure the speedup of our dynamic algorithm for edge removals, we start with the base graph. We select 100 edges at random and remove them one-by-one. After each edge removal, we perform the update of the dynamic algorithm and measure the time it takes. We also measure the reference time of the static algorithm and compute the speedup of the dynamic algorithm.
 
 \subsection{Edge insertions in complex networks}
-The results for edge insertions in undirected complex networks are shown in Table~\ref{tbl:topkUndirectedComplex}, the results for directed complex networks in Table~\ref{tbl:topkDirectedComplex}. We always yield a double-digit speedup in the geometric mean in undirected networks with $k = 1, 10, 100$.
+The results for edge insertions in undirected complex networks are shown in Table~\ref{tbl:topkUndirectedComplex}, the results for directed complex networks in Table~\ref{tbl:topkDirectedComplex}. We always yield a double-digit speedup in the geometric mean in undirected networks with  $k \in \{1, 10, 100\}$.
 
 We achieve smaller speedups on directed networks. One reason for this is the computation of the number of reachable nodes. In the undirected case, computing the number of reachable nodes does not take a significant amount of time in the first place. On top of that, we have a simple optimization for edge insertions which is faster than recomputing the connected components of a graph from scratch. However, in the directed case, computing the upper bound for the number of reachable nodes takes a significant amount of time. For instance, it takes about 2 seconds to do so on the graph \texttt{wiki-Talk}. Since we have not implemented any optimizations for dynamic graphs, this effectively results in a lower bound for the update time in these graphs, even if almost no node is actually affected by an edge insertion.
 
@@ -127,38 +127,66 @@ Figures~\ref{fig:updateTimesAs20000102} and \ref{fig:updateTimesAmazon} contain 
 \end{figure}
 
 \paragraph{Optimizations}
-We now want to examine the effect of the various optimizations we have proposed for the dynamic algorithm for complex networks. Table~\ref{tbl:optimizationImpact} contains the average number of affected nodes and the percentage of nodes skipped due to each of the optimizations. In any case, skipping far-away nodes allows us to ignore the vast majority of affected nodes after an update. Combined with the cheap updates for boundary nodes and applying the level-based improvement bounds, we need to run a new pruned BFS for less than 1\% of the affected nodes in most cases.
+We now want to examine the effect of the various optimizations we have proposed for the dynamic algorithm for complex networks. Table~\ref{tbl:optimizationImpact} contains the average number of affected nodes and the percentage of nodes skipped due to each of the optimizations in undirected complex networks. In any case, skipping far-away nodes allows us to ignore the vast majority of affected nodes after an update. Combined with the cheap updates for boundary nodes and applying the level-based improvement bounds, we need to run a new pruned BFS for less than 1\% of the affected nodes for most of the graphs.
+
+Table~\ref{tbl:optimizationImpactDirected} contains the same analysis for directed complex networks. In contrast to the undirected complex networks, nodes cannot be skipped entirely or updated cheaply as often. Edge insertions more often change the upper bound for the number of reachable nodes in these graphs. Therefore, only the level-based improvement bounds are applicable in these cases. Depending on the graph, we also need to run a new pruned BFS for a higher percentage of the affected nodes. However, the number of affected nodes is sometimes extremely small compared to the number of nodes in the graph. For instance, only 75 of the 3774768 nodes in the graph \texttt{cit-Patents} are affected by an edge insertion on average. In this specific case, the bottleneck of recomputing the upper bounds for the number of reachable nodes in directed graphs is very apparent.
 
 \begin{table}[h!]
 \begin{tabular}{lrrllll}
 \toprule
- Graph                &   affected &   $|V|$ & far-away   & boundary   & impr. bound   & pruned BFS   \\
+ Graph                &   affected &   \% affected & far-away   & boundary   & impr. bound   & pruned BFS   \\
 \midrule \midrule
- as-caida20071105     &       4265 &   26475 & 88.568\%    & 10.934\%    & 0.460\%        & 0.038\%   \\
- as-skitter           &      84560 & 1696415 & 89.475\%    & 9.609\%     & 0.569\%        & 0.347\%   \\
- as20000102           &       1544 &    6474 & 77.106\%    & 16.879\%    & 5.875\%        & 0.141\%   \\
- ca-AstroPh           &        356 &   18772 & 88.659\%    & 6.856\%     & 2.402\%        & 2.084\%   \\
- ca-CondMat           &       3478 &   23133 & 88.338\%    & 4.083\%     & 7.293\%        & 0.287\%   \\
- ca-GrQc              &        625 &    5242 & 86.027\%    & 6.904\%     & 5.917\%        & 1.152\%   \\
- ca-HepPh             &        463 &   12008 & 91.679\%    & 4.472\%     & 2.733\%        & 1.116\%   \\
- ca-HepTh             &       1895 &    9877 & 84.123\%    & 3.530\%     & 11.300\%       & 1.046\%   \\
- com-amazon.ungraph   &      67011 &  334863 & 83.707\%    & 3.611\%     & 12.281\%       & 0.402\%   \\
- com-dblp.ungraph     &      33542 &  317080 & 85.622\%    & 4.115\%     & 10.061\%       & 0.201\%   \\
- com-youtube.ungraph  &     108705 & 1134890 & 67.154\%    & 10.968\%    & 21.362\%       & 0.516\%   \\
- email-Enron          &       1774 &   36692 & 93.648\%    & 5.568\%     & 0.752\%        & 0.032\%   \\
- facebook\_combined    &        274 &    4039 & 73.131\%    & 15.058\%    & 11.545\%       & 0.266\%   \\
- loc-brightkite\_edges &       5557 &   58228 & 65.051\%    & 12.502\%    & 21.411\%       & 1.036\%   \\
- loc-gowalla\_edges    &      10250 &  196591 & 97.420\%    & 2.371\%     & 0.162\%        & 0.047\%   \\
- oregon1\_010526       &       2578 &   11174 & 77.314\%    & 17.255\%    & 5.337\%        & 0.093\%   \\
- oregon2\_010526       &       1409 &   11461 & 83.951\%    & 14.954\%    & 1.004\%        & 0.091\%   \\
+ as-caida20071105     &       4871 & 18.399\% & 78.020\%    & 9.426\%     & 11.993\%       & 0.561\%   \\
+ as-skitter           &      85367 & 5.032\%  & 94.076\%    & 4.993\%     & 0.149\%        & 0.782\%   \\
+ as20000102           &       1300 & 20.087\% & 75.659\%    & 15.294\%    & 7.199\%        & 1.849\%   \\
+ ca-AstroPh           &        488 & 2.599\%  & 85.000\%    & 3.599\%     & 1.881\%        & 9.520\%   \\
+ ca-CondMat           &       2036 & 8.801\%  & 91.423\%    & 5.569\%     & 1.810\%        & 1.198\%   \\
+ ca-GrQc              &        631 & 12.040\% & 69.443\%    & 11.565\%    & 15.326\%       & 3.666\%   \\
+ ca-HepPh             &        408 & 3.397\%  & 89.808\%    & 3.299\%     & 2.228\%        & 4.665\%   \\
+ ca-HepTh             &       1483 & 15.014\% & 72.514\%    & 13.195\%    & 11.862\%       & 2.429\%   \\
+ com-amazon.ungraph   &      76651 & 22.890\% & 90.137\%    & 4.948\%     & 4.546\%        & 0.369\%   \\
+ com-dblp.ungraph     &      55686 & 17.562\% & 96.502\%    & 2.930\%     & 0.432\%        & 0.136\%   \\
+ com-youtube.ungraph  &     210217 & 18.523\% & 58.377\%    & 3.587\%     & 37.940\%       & 0.096\%   \\
+ email-Enron          &       1779 & 4.849\%  & 91.916\%    & 6.374\%     & 1.366\%        & 0.344\%   \\
+ facebook\_combined    &        153 & 3.782\%  & 53.577\%    & 15.101\%    & 24.723\%       & 6.598\%   \\
+ loc-brightkite\_edges &       4198 & 7.209\%  & 83.519\%    & 13.770\%    & 1.514\%        & 1.196\%   \\
+ loc-gowalla\_edges    &      14711 & 7.483\%  & 75.705\%    & 6.343\%     & 15.188\%       & 2.764\%   \\
+ oregon1\_010526       &       1984 & 17.755\% & 73.074\%    & 22.725\%    & 2.719\%        & 1.482\%   \\
+ oregon2\_010526       &       1306 & 11.398\% & 75.920\%    & 20.450\%    & 2.636\%        & 0.994\%   \\
 \bottomrule
 \end{tabular}
-\caption{Impact of optimizations}{Analysis of the various optimization strategies, averaged over 100 random edge insertions in undirected complex networks with $k = 10$. The column ``affected'' contains the average number of affected nodes, ``far-away'' the number of nodes skipped because their previous cutoff level was smaller than the distance to the edge insertion, ``boundary'' the number of boundary nodes and ``impr. bound'' the number of nodes that could be updated with their maximum improvement without surpassing the $k$-th most central node.}
+\caption{Impact of optimizations in undirected complex networks}{Analysis of the various optimization strategies, averaged over 100 random edge insertions in undirected complex networks with $k = 10$. The column ``affected'' contains the average number of affected nodes, ``far-away'' the number of nodes skipped because their previous cutoff level was smaller than the distance to the edge insertion, ``boundary'' the number of boundary nodes and ``impr. bound'' the number of nodes that could be updated with their maximum improvement without surpassing the $k$-th most central node.}
 \label{tbl:optimizationImpact}
 \end{table}
 
+\begin{table}[h!]
+	\begin{tabular}{lrrllll}
+\hline
+ Graph            &   affected &   \% affected & far-away   & boundary   & impr. bound   & pruned BFS   \\
+\hline
+ cit-HepPh        &        724 & 2.096\%  & 84.854\%    & 3.066\%     & 3.745\%        & 8.335\%   \\
+ cit-HepTh        &        406 & 1.463\%  & 31.217\%    & 5.163\%     & 42.573\%       & 21.047\%  \\
+ cit-Patents      &         75 & 0.002\%  & 0.000\%     & 0.000\%     & 99.933\%       & 0.067\%   \\
+ email-EuAll      &       9375 & 3.535\%  & 19.879\%    & 1.057\%     & 79.057\%       & 0.007\%   \\
+ p2p-Gnutella31   &       3781 & 6.042\%  & 47.083\%    & 8.261\%     & 32.584\%       & 12.073\%  \\
+ soc-Epinions1    &       1696 & 2.235\%  & 31.853\%    & 1.717\%     & 66.078\%       & 0.351\%   \\
+ soc-Slashdot0902 &       3986 & 4.851\%  & 25.621\%    & 2.715\%     & 71.430\%       & 0.235\%   \\
+ twitter\_combined &        904 & 1.112\%  & 87.040\%    & 9.103\%     & 1.596\%        & 2.261\%   \\
+ web-Google       &      48512 & 5.540\%  & 62.906\%    & 0.735\%     & 36.342\%       & 0.017\%   \\
+ web-NotreDame    &       4924 & 1.512\%  & 58.379\%    & 2.108\%     & 39.496\%       & 0.017\%   \\
+ web-Stanford     &      14683 & 5.208\%  & 53.691\%    & 5.562\%     & 37.511\%       & 3.236\%   \\
+ wiki-Talk        &       3512 & 0.147\%  & 59.850\%    & 2.824\%     & 37.317\%       & 0.009\%   \\
+ wiki-Vote        &         19 & 0.269\%  & 48.930\%    & 40.157\%    & 5.796\%        & 5.117\%   \\
+\hline
+\end{tabular}
+\caption{Impact of optimizations in directed complex networks}{Analysis of the various optimization strategies, averaged over 100 random edge insertions in directed complex networks with $k = 10$.}
+\label{tbl:optimizationImpactDirected}
+\end{table}
+
 \paragraph{Affected nodes}
-We now want to analyze the number of affected nodes after edge modifications. Table~\ref{tbl:optimizationImpact} suggests that, on average, a clear majority of the nodes ($> 80\%$) in the tested graphs are unaffected by a random edge modification. As an example, we have computed the number of affected nodes for each edge in the graph \texttt{oregon1\_010526}. For this purpose, we remove each edge individually from the graph, compute the number of affected nodes and then add the edge back. Figure~\ref{fig:histOregon1} contains a histogram of the data. The median number of affected nodes is 1208 for this graph. The median is represented by the dashed line in the histogram. We can see that for over half of the edges in the graph, only a tenth of all nodes will be affected if the edge is modified. However, there is also a large peak at the other end of the spectrum, where a considerable number of edges affects almost every node in the graph if they are modified. Most of these node have only a single neighbor and removing the edge between them splits the connected component, therefore affecting every node in the connected component.
+We now want to analyze the number of affected nodes after edge modifications. Table~\ref{tbl:optimizationImpact} suggests that, on average, a clear majority of the nodes ($> 80\%$) in the tested graphs are unaffected by a random edge modification. In directed graphs (Table~\ref{tbl:optimizationImpactDirected}), fewer than 6\% of all nodes are affected by an edge insertion on average for all graphs.
+
+As an example, we have computed the number of affected nodes for each edge in the undirected graph \texttt{oregon1\_010526}. For this purpose, we remove each edge individually from the graph, compute the number of affected nodes and then add the edge back. Figure~\ref{fig:histOregon1} contains a histogram of the data. The median number of affected nodes is 1208 for this graph. The median is represented by the dashed line in the histogram. We can see that for over half of the edges in the graph, only a tenth of all nodes will be affected if the edge is modified. However, there is also a large peak at the other end of the spectrum, where a considerable number of edges affects almost every node in the graph if they are modified. Most of these node have only a single neighbor and removing the edge between them splits the connected component, therefore affecting every node in the connected component.
 
 \begin{figure}[h!]
   \includegraphics[width=0.95\textwidth]{figures/oregon1-affected}
@@ -196,7 +224,7 @@ Graph & \multicolumn{4}{c|}{k = 1} & \multicolumn{4}{c|}{k = 10} & \multicolumn{
 \bottomrule
 \end{tabular}
 
-\caption{Update times for 100 random edge insertions with $k = 1, 10, 100$ in undirected complex networks.  The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
+\caption{Update times for 100 random edge insertions with  $k \in \{1, 10, 100\}$ in undirected complex networks}{The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
 \label{tbl:topkUndirectedComplex}
 \end{table}
 \end{landscape}
@@ -228,19 +256,55 @@ Graph & \multicolumn{4}{c|}{k = 1} & \multicolumn{4}{c|}{k = 10} & \multicolumn{
 \bottomrule
 \end{tabular}
 
-\caption{Update times for 100 random edge insertions with $k = 1, 10, 100$ in directed complex networks. The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
+\caption{Update times for 100 random edge insertions with  $k \in \{1, 10, 100\}$ in directed complex networks}{The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
 \label{tbl:topkDirectedComplex}
 \end{table}
 \end{landscape}
 
 \subsection{Edge insertions in street networks}
+\label{sec:evaluationEdgeInsertionsStreetNetworks}
 We now want to evaluate our dynamic algorithm on the six street networks from Table~\ref{tbl:streetNetworks}. We run a similar experiment for street networks as we have for complex networks. The only difference is that we only compute the reference time for ten of the intermediate graphs. We then calculate an average of these reference times and compute the speedups based on the average reference time. The results are listed in Table~\ref{tbl:resultsStreetNetworksUndirected} for the undirected street networks and in Table~\ref{tbl:resultsStreetNetworksDirected} for the directed street networks. We observe that the speedups are generally higher for our street networks than for the complex networks.
 
-One reason for this is that, while many nodes might be affected by an edge insertion, their distance to this graph modification is quite large. Since we have implemented our algorithm for harmonic closeness centrality, the actual closeness centralities of affected nodes do not change by a large amount. This also means that applying the level-based improvement bounds for all affected nodes only rarely results in a new upper bound that is larger than the previous $k$-th largest closeness centrality. In these cases, it is often enough to recompute the exact closeness centralities of the affected nodes among the $k$ most central ones.
+One reason for this is that, while many nodes might be affected by an edge insertion, their distance to this graph modification is quite large. Since we have implemented our algorithm for harmonic closeness centrality, the actual closeness centralities of affected nodes do not change by a large amount. This also means that applying the level-based improvement bounds for all affected nodes only rarely results in a new upper bound that is larger than the previous $k$-th largest closeness centrality. In these cases, it is often enough to recompute the exact closeness centralities of the affected nodes among the $k$ most central ones. In Table~\ref{tbl:bfsCountUndirected} we compare the number of complete breadth-first searches our dynamic algorithm performs with the static algorithm. It is clear that the dynamic algorithm performs a significantly smaller number of searches. This also explains the large speedups we observe.
 
-We also observe higher average speedups in directed street networks than in undirected street networks. The reason for this is the lower number of affected nodes in directed networks. However, the maximum speedups are generally smaller in the directed networks than in the undirected networks. Since the actual update times are quite small, recomputing the number of reachable nodes becomes a bottleneck and limits the maximum speedup in directed graphs.
+We also observe higher average speedups in directed street networks than in undirected street networks. The reason for this is the lower number of affected nodes in directed networks. This can be seen when comparing the values in Table~\ref{tbl:bfsCountUndirected} and Table~\ref{tbl:bfsCountDirected}.
 
-\subsection{Edge removals in complex networks}
+\begin{table}[h!]
+\centering
+\begin{tabular}{lrrrr}
+\hline
+ Graph         &   affected &    |V| &   Reference BFS &   Dynamic BFS \\
+\hline
+ azores        &      40900 & 237174 &            3863 &            47 \\
+ belize        &      82040 &  96977 &            4243 &           108 \\
+ faroe-islands &      11923 &  31097 &            1404 &            64 \\
+ isle-of-man   &      55205 &  61082 &            2703 &           132 \\
+ liechtenstein &      51295 &  54972 &            2328 &           124 \\
+ malta         &      56096 &  91188 &            5099 &           113 \\
+\hline
+\end{tabular}
+\caption{Average number of complete breadth-first searches in undirected street networks with $k = 100$}
+\label{tbl:bfsCountUndirected}
+\end{table}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lrrrr}
+\hline
+ Graph         &   affected &    |V| &   Reference BFS &   Dynamic BFS \\
+\hline
+ azores        &      20254 & 237174 &            7527 &            12 \\
+ belize        &      35745 &  96977 &            5148 &            43 \\
+ faroe-islands &       9471 &  31097 &            2610 &            54 \\
+ isle-of-man   &      28141 &  61082 &            3107 &            63 \\
+ liechtenstein &      23626 &  54972 &            3328 &            50 \\
+ malta         &      26248 &  91188 &            6134 &            69 \\
+\hline
+\end{tabular}
+\caption{Average number of complete breadth-first searches in directed street networks with $k = 100$}
+\label{tbl:bfsCountDirected}
+\end{table}
+
 
 
 \begin{landscape}
@@ -261,7 +325,7 @@ Graph & \multicolumn{4}{c|}{k = 1} & \multicolumn{4}{c|}{k = 10} & \multicolumn{
  (geometric) mean & 14.12  &  76.845 & 21.329 & 1011.4   & 14.268 &  72.208 & 18.526 &  694.093 & 15.174 &  58.478 & 13.564 & 1161     \\
 \bottomrule
 \end{tabular}
-\caption{Update times for 100 random edge insertions with $k = 1, 10, 100$ in undirected street networks. The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
+\caption{Update times for 100 random edge insertions with  $k \in \{1, 10, 100\}$ in undirected street networks}{The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
 \label{tbl:resultsStreetNetworksUndirected}
 \end{table}
 
@@ -281,14 +345,18 @@ Graph & \multicolumn{4}{c|}{k = 1} & \multicolumn{4}{c|}{k = 10} & \multicolumn{
  (geometric) mean & 12.424 & 142.191 &  41.113 & 1124.05  & 12.585 & 129.965 & 22.741 & 1099.86  & 13.138 & 124.17  & 32.423 & 1103.21  \\
 \bottomrule
 \end{tabular}
-\caption{Update times for 100 random edge insertions with $k = 1, 10, 100$ in directed street networks. The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
+\caption{Update times for 100 random edge insertions with  $k \in \{1, 10, 100\}$ in directed street networks}{The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
 \label{tbl:resultsStreetNetworksDirected}
 \end{table}
 
 \end{landscape}
 
+\subsection{Edge removals in complex networks}
+At last, we want to evaluate our dynamic algorithm for edge removals. We removed 100 random edges from the graph one-by-one and measured the update times. Due to time constraints, we only computed the reference time of the static algorithm after every ten edge removals. The results for undirected complex networks are listed in Table~\ref{tbl:removalsUndirectedComplex}, the results for undirected street networks in Table~\ref{tbl:removalsUndirectedStreet} and the results for directed street networks in Table~\ref{tbl:removalsDirectedStreet}.
 
+For undirected complex networks, we observe double-digit speedups in the geometric mean on all graphs. For some graphs and some edges, the speedup of the dynamic algorithm can be up to three orders of magnitude.
 
+In street networks, we again observe much larger speedups. Recall that we use the same algorithm for both complex networks and street networks. We iterate over every node in the graph in decreasing order of their previous closeness centrality or upper bound until we reach a node whose old upper bound is smaller than the exact closeness centrality of the $k$-th most central node. Therefore, we will mostly run complete breadth-first searches for the affected nodes among the $k$ most central nodes. As we have seen in Section~\ref{sec:evaluationEdgeInsertionsStreetNetworks}, the relative change of the closeness centralities after edge modifications in street networks are rather small. Therefore, there often is little change in the ranking of the nodes. It is often enough to recompute the exact closeness centralities of the affected nodes among the $k$ most central nodes.
 
 \begin{landscape}
 \begin{table}[h!]
@@ -311,13 +379,15 @@ Graph & \multicolumn{4}{c|}{k = 1} & \multicolumn{4}{c|}{k = 10} & \multicolumn{
  email-Enron          &   1.053 &  23.66  &  7.163 & 678.557 &   1.075 &  21.952 &  9.441 & 645.415 &   1.173 &  21.828 &  8.032 & 704.578 \\
  loc-brightkite\_edges &   1.674 &  16.77  &  8.169 &  20.462 &   1.689 &  13.874 &  5.888 &  21.335 &   1.803 &  12.232 &  5.648 &  22.23  \\
  loc-gowalla\_edges    &   5.764 &  12.352 &  5.15  &  15.834 &   6.421 &  12.121 &  5.815 &  17.186 &  19.233 &  21.904 &  1.703 &  50.859 \\
- com-dblp      &   9.632 &  12.491 &  3.694 &  18.524 &  10.192 &  10.809 &  3.534 &  19.029 &  15.289 &  11.486 &  3.136 &  28.805 \\
- com-amazon    &  31.525 &  33.324 &  5.763 &  57.895 &  30.694 &  21.648 &  2.658 &  49.403 &  83.667 &  42.646 &  7.778 & 134.251 \\
- com-youtube   &  37.569 &  14.913 &  5.938 &  20.414 &  95.859 &  18.927 &  1.353 &  54.741 & 133.456 &  20.08  &  1.529 &  74.309 \\
- as-skitter           & 336.102 &  53.084 &  1.033 &  84.169 & 313.04  &  35.342 &  1.073 &  76.443 & 492.071 &  39.964 &  1.08  & 121.05  \\
+ com-dblp.ungraph     &   9.632 &  12.491 &  3.694 &  18.524 &  10.192 &  10.809 &  3.534 &  19.029 &  15.289 &  11.486 &  3.136 &  28.805 \\
+ com-amazon.ungraph   &  31.525 &  33.324 &  5.763 &  57.895 &  30.694 &  21.648 &  2.658 &  49.403 &  83.667 &  42.646 &  7.778 & 134.251 \\
+ com-youtube.ungraph  &  37.569 &  14.913 &  5.938 &  20.414 &  95.859 &  18.927 &  1.353 &  54.741 & 133.456 &  20.08  &  1.529 &  74.309 \\
+ as-skitter           & 336.102 &  53.084 &  1.033 &  84.169 & 313.04  &  35.342 &  1.073 &  76.443 & 492.071 &  39.964 &  1.08  & 121.05  \\ \midrule \midrule
+ (geometric) mean     &  25.123 &  23.338 &  6.418 &  95.477 &  27.226 &  20.437 &  5.263 & 101.12  &  44.152 &  19.873 &  4.741 & 121.101 \\
 \bottomrule
 \end{tabular}
-\caption{Update times for 100 random edge removals with $k = 1, 10, 100$ in undirected complex networks. The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
+\caption{Update times for 100 random edge removals with  $k \in \{1, 10, 100\}$ in undirected complex networks}{The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
+\label{tbl:removalsUndirectedComplex}
 \end{table}
 
 \end{landscape}
@@ -332,15 +402,17 @@ Graph & \multicolumn{4}{c|}{k = 1} & \multicolumn{4}{c|}{k = 10} & \multicolumn{
 Graph & \multicolumn{4}{c|}{k = 1} & \multicolumn{4}{c|}{k = 10} & \multicolumn{4}{c}{k = 100}\\
                 &     ref [s] &   gmean &   min &     max &     ref [s] &   gmean &   min &     max &     ref [s] &   gmean &   min &     max \\
 \midrule \midrule
- faroe-islands &  3.000     & 174.525 & 46.465 & 2119.15 &  3.03  & 176.409 & 60.66  & 2415.04 &  2.991 & 162.026 & 37.017 & 2076.44 \\
- liechtenstein &  7.842 &  76.118 & 50.133 & 1744.71 &  7.884 &  76.006 & 54.175 & 2248.93 &  8.836 &  73.512 & 54.79  & 2950.11 \\
- isle-of-man   & 10.281 &  84.939 & 67.748 & 3055.96 &  9.977 &  78.024 & 64.428 & 2563.11 & 10.207 &  65.256 & 52.595 & 2689.05 \\
- malta         & 11.597 &  93.482 & 51.771 & 1543.31 & 12.172 &  93.48  & 51.991 & 1430.01 & 12.253 &  83.264 & 47.082 & 1467.43 \\
- belize        & 17.508 & 119.023 & 25.744 & 1950.99 & 17.523 & 112.325 & 20.783 & 2142.72 & 19.817 & 101.253 & 13.732 & 2394.16 \\
- azores        & 25.804 & 220.592 & 38.487 &  890.16 & 25.567 & 230.051 & 39.725 & 1122.2  & 25.241 & 209.382 & 36.414 & 1138.82 \\
+ faroe-islands    &  3     & 174.525 & 46.465 & 2119.15 &  3.03  & 176.409 & 60.66  & 2415.04 &  2.991 & 162.026 & 37.017 & 2076.44 \\
+ liechtenstein    &  7.842 &  76.118 & 50.133 & 1744.71 &  7.884 &  76.006 & 54.175 & 2248.93 &  8.836 &  73.512 & 54.79  & 2950.11 \\
+ isle-of-man      & 10.281 &  84.939 & 67.748 & 3055.96 &  9.977 &  78.024 & 64.428 & 2563.11 & 10.207 &  65.256 & 52.595 & 2689.05 \\
+ malta            & 11.597 &  93.482 & 51.771 & 1543.31 & 12.172 &  93.48  & 51.991 & 1430.01 & 12.253 &  83.264 & 47.082 & 1467.43 \\
+ belize           & 17.508 & 119.023 & 25.744 & 1950.99 & 17.523 & 112.325 & 20.783 & 2142.72 & 19.817 & 101.253 & 13.732 & 2394.16 \\
+ azores           & 25.804 & 220.592 & 38.487 &  890.16 & 25.567 & 230.051 & 39.725 & 1122.2  & 25.241 & 209.382 & 36.414 & 1138.82 \\ \midrule \midrule
+ (geometric) mean & 12.672 & 118.504 & 44.81  & 1765.5  & 12.692 & 116.708 & 45.682 & 1905.49 & 13.224 & 105.413 & 36.868 & 2009.8  \\
 \bottomrule
 \end{tabular}
-\caption{Update times for 100 random edge removals with $k = 1, 10, 100$ in undirected street networks. The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
+\caption{Update times for 100 random edge removals with  $k \in \{1, 10, 100\}$ in undirected street networks}{The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
+\label{tbl:removalsUndirectedStreet}
 \end{table}
 
 \begin{table}[h!]
@@ -350,18 +422,86 @@ Graph & \multicolumn{4}{c|}{k = 1} & \multicolumn{4}{c|}{k = 10} & \multicolumn{
 Graph & \multicolumn{4}{c|}{k = 1} & \multicolumn{4}{c|}{k = 10} & \multicolumn{4}{c}{k = 100}\\
                 &     ref [s] &   gmean &   min &     max &     ref [s] &   gmean &   min &     max &     ref [s] &   gmean &   min &     max \\
 \midrule \midrule
- faroe-islands &  2.984 & 307.814 & 49.063 & 3755.06  &  3.05  & 312.551 & 54.554 & 3881.59  &  3.119 & 305.6   & 41.437 & 3899.65  \\
- liechtenstein &  8.664 & 166.661 & 60.866 & 3983.57  &  8.64  & 174.874 & 68.587 & 6251.16  &  9.812 & 163.476 & 55.419 & 3834.49  \\
- isle-of-man   & 10.859 & 155.951 & 63.212 &  366.018 & 11.103 & 173.229 & 65.429 &  374.513 & 11.873 & 163.354 & 63.113 &  402.725 \\
- malta         & 12.527 & 202.493 & 49.013 & 4710.48  & 12.535 & 189.714 & 52.262 & 4548.08  & 12.787 & 174.614 & 48.63  & 4333.87  \\
- belize        & 13.146 & 160.658 & 55.867 & 4233.6   & 13.417 & 164.816 & 50.796 & 4483     & 14.241 & 150.264 & 45.17  & 4870.38  \\
- azores        & 32.032 & 565.52  & 43.012 & 2162.45  & 31.112 & 666.809 & 44.899 & 3347.73  & 30.644 & 578.381 & 36.675 & 3259.14  \\
+ faroe-islands    &  2.984 & 307.814 & 49.063 & 3755.06  &  3.05  & 312.551 & 54.554 & 3881.59  &  3.119 & 305.6   & 41.437 & 3899.65  \\
+ liechtenstein    &  8.664 & 166.661 & 60.866 & 3983.57  &  8.64  & 174.874 & 68.587 & 6251.16  &  9.812 & 163.476 & 55.419 & 3834.49  \\
+ isle-of-man      & 10.859 & 155.951 & 63.212 &  366.018 & 11.103 & 173.229 & 65.429 &  374.513 & 11.873 & 163.354 & 63.113 &  402.725 \\
+ malta            & 12.527 & 202.493 & 49.013 & 4710.48  & 12.535 & 189.714 & 52.262 & 4548.08  & 12.787 & 174.614 & 48.63  & 4333.87  \\
+ belize           & 13.146 & 160.658 & 55.867 & 4233.6   & 13.417 & 164.816 & 50.796 & 4483     & 14.241 & 150.264 & 45.17  & 4870.38  \\
+ azores           & 32.032 & 565.52  & 43.012 & 2162.45  & 31.112 & 666.809 & 44.899 & 3347.73  & 30.644 & 578.381 & 36.675 & 3259.14  \\ \midrule \midrule
+ (geometric) mean & 13.369 & 229.779 & 53.027 & 2486.1   & 13.31  & 241.302 & 55.486 & 2920.32  & 13.746 & 223.262 & 47.63  & 2730.32  \\
 \bottomrule
 \end{tabular}
-\caption{Update times for 100 random edge removals with $k = 1, 10, 100$ in directed street networks. The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
+\caption{Update times for 100 random edge removals with  $k \in \{1, 10, 100\}$ in directed street networks}{The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
+\label{tbl:removalsDirectedStreet}
 \end{table}
 
 \end{landscape}
 
 
 \section{Group closeness}
+We want to evaluate our dynamic algorithm for group closeness in this section. The experiment is similar to our experiments with dynamic Top-k closeness centrality. We first remove 100 edges randomly from the graph and compute the initial group on the resulting graph. Then, we add these edges back one-by-one and measure the time it takes to recompute the group. As a reference, we run the static algorithm after every ten edge insertions and compute an average of these runtimes.
+
+The results are listed in Table~\ref{tbl:groupClosenessResults} for $k \in \{10, 25, 100\}$. Recall that our algorithm tries to minimize the work it takes to replicate the results of the static algorithm as long as the group is unchanged after the edge insertion. After one node in the group has changed, the algorithm falls back to the static algorithm. We expect smaller speedups for larger group sizes because it becomes more likely that any of the nodes has changed, the larger the group is. Our experimental results confirm this expectation. For $k = 10$, we observe a speedup of about $13$ in the geometric mean, while the speedup is only around $7$ for $k = 100$ in the geometric mean.
+
+\paragraph{Cutoff points}
+We have also listed the average ``cutoff'' point for each graph. This is either the point where the group is completely computed or when the dynamic algorithm falls back to the static algorithm. We observe that the dynamic algorithm almost never falls back to the static algorithm for $k = 10$. It is much more likely that the group changes for $k = 100$ since the average cutoff point is after about $74$ group members.
+
+\paragraph{Update time distribution}
+The distribution of the update times for group closeness looks similar to the distribution for Top-k closeness centrality. This can be seen in Figure~\ref{fig:updateTimeDistributionGcDblp} for $k = 100$ and the graph \texttt{com-dblp}. The update times for about a third of inserted edges is absolutely minimal compared to the reference time. Another third of the edges have more or less equal update times on a higher level. In the last third, there is a constant increase. For some edges, the update time is close to the reference time. In these cases, there is a large number of affected nodes and the dynamic algorithm falls back to the static algorithm relatively early.
+
+\begin{figure}[h!]
+	\includegraphics[width=0.95\textwidth]{figures/{gc_com-dblp.ungraph_100}.pdf}
+	\caption{Update time distribution for group closeness on the graph \texttt{com-dblp} with $k~=~100$}
+	\label{fig:updateTimeDistributionGcDblp}
+\end{figure}
+
+\paragraph{Iteration times}
+At last, we want to analyze the time it takes to select the $i$-th member of the group and compare our dynamic algorithm to the static algorithm. For this purpose, we measure the iteration times during each update operation and compute an average for each iteration. We do the same for each run of the static algorithm to get a reference.  We have observed two types of graphs: in some graphs, the selecting the first node takes the longest (see Figure~\ref{fig:iterationTimesCaGrQc}); in other graphs, selecting the second node takes longer (see Figure~\ref{fig:iterationTimesDblp}). Later iterations are significantly faster than the first two iterations for all the graphs we have tested.
+
+Since our dynamic algorithm for Top-k closeness centrality is faster than re-running the static algorithm, the first iteration of our dynamic algorithm for group closeness is also significantly faster than the corresponding static algorithm. Recall that our dynamic algorithm for group closeness only has to recompute the marginal gains for affected nodes in later iterations as long as the group has not changed. The old marginal gains of unaffected nodes become upper bounds and do not have to be recomputed unless the node is not the node with the highest known exact marginal gain. As we have seen earlier, the group often does not change at all or only in a late iteration which leads to a late average cutoff point. Therefore, we also observe much smaller iteration times for later iterations compared to the static algorithm.
+
+
+\begin{figure}[h!]
+	\includegraphics[width=0.95\textwidth]{figures/iterations_ca-GrQc_10}
+	\caption{Iteration times for group closeness on the graph \texttt{ca-GrQc} with $k~=~10$}
+	\label{fig:iterationTimesCaGrQc}
+\end{figure}
+
+\begin{figure}[h!]
+	\includegraphics[width=0.95\textwidth]{figures/{iterations_com-dblp.ungraph_10}.pdf}
+	\caption{Iteration times for group closeness on the graph \texttt{com-dblp} with $k~=~10$}
+	\label{fig:iterationTimesDblp}
+\end{figure}
+
+\begin{landscape}
+\begin{table}[h!]
+\centering
+\begin{tabular}{l|rrrr|rrrr|rrrr}
+\toprule
+Graph & \multicolumn{4}{c|}{k = 10} & \multicolumn{4}{c|}{k = 25} & \multicolumn{4}{c}{k = 100}\\
+                &     ref [s] &   gmean &   max &     cutoff &     ref [s] &   gmean &   max &     cutoff &     ref [s] &   gmean &  max &     cutoff \\
+\midrule \midrule
+ facebook\_combined    &   0.185 &  13.425 &  16.775 &   10     &   0.214 &  12.396 &  16.6   &   22.4   &   0.272 &   4.556 &   6.248 &   26.35  \\
+ ca-GrQc              &   0.23  &  11.949 &  44.743 &    9.96  &   0.282 &   9.014 &  32.801 &   24.3   &   0.576 &   4.527 &  20.536 &   62.2   \\
+ as20000102           &   0.235 &   6.408 &  27.596 &    9.76  &   0.271 &   5.371 &  24.983 &   23.72  &   0.43  &   3.342 &   7.412 &   36.44  \\
+ oregon1\_010526       &   0.411 &   7.501 &  26.866 &   10     &   0.466 &   9.468 &  27.517 &   24.93  &   0.698 &   4.563 &  10.365 &   61.13  \\
+ oregon2\_010526       &   0.45  &  10.827 &  31.441 &   10     &   0.532 &  10.046 &  26.392 &   24.87  &   0.772 &   5.692 &  18.078 &   65     \\
+ ca-HepTh             &   0.471 &   9.901 &  44.656 &   10     &   0.572 &   7.448 &  39.717 &   24.47  &   0.885 &   4.328 &  27.774 &   71.19  \\
+ ca-HepPh             &   0.611 &  17.87  &  26.56  &   10     &   0.749 &  16.41  &  34.307 &   24.64  &   1.136 &   9.119 &  21.565 &   75.1   \\
+ as-caida20071105     &   1.12  &   6.538 &  24.239 &   10     &   1.236 &   6.732 &  24.731 &   24.99  &   1.76  &   5.159 &  20.681 &   77.94  \\
+ ca-CondMat           &   1.144 &  10.41  &  29.263 &   10     &   1.401 &  11.819 &  34.703 &   24.77  &   2.138 &   6.015 &  21.897 &   73.71  \\
+ email-Enron          &   1.643 &  15.63  &  26.138 &   10     &   1.933 &  14.199 &  30.854 &   25     &   2.734 &   9.355 &  22.631 &   91.51  \\
+ loc-brightkite\_edges &   3.018 &  13.49  &  28.242 &   10     &   3.468 &  10.922 &  24.963 &   25     &   5.14  &   6.519 &  24.864 &   80.48  \\
+ loc-gowalla\_edges    &  17.426 &  16.947 &  32.629 &   10     &  19.323 &  16.118 &  35.97  &   25     &  26.993 &   8.785 &  32.544 &   96.85  \\
+ com-dblp.ungraph     & 121.719 &  21.881 & 147.72  &   10     & 141.551 &  14.791 & 148.484 &   25     & 189.959 &  13.911 & 109.104 &   97.55  \\
+ com-amazon.ungraph   & 286.456 &  17.746 & 318.317 &   10     & 305.592 &  18.609 & 288.659 &   24.93  & 346.771 &  10.653 & 193.967 &   98.23  \\
+ com-youtube.ungraph  & 746.916 &  29.85  & 282.806 &   10     & 788.207 &  34.138 & 275.085 &   25     & 979.787 &  16.64  & 136.334 &   99.46  \\ \midrule \midrule
+ (geometric) mean     &  78.802 &  12.822 &  44.146 &    9.981 &  84.387 &  11.867 &  44.146 &   24.601 & 104.004 &   6.773 &  26.739 &   74.209 \\
+\bottomrule
+\end{tabular}
+\caption{Update times for group closeness for 100 random edge insertions with  $k \in \{1, 10, 100\}$ in undirected street networks}{The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``min'' and ``max'' the minimum and maximum speedup.}
+\label{tbl:groupClosenessResults}
+\end{table}	
+\end{landscape}
+
+

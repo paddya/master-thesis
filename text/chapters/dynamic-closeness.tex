@@ -381,21 +381,29 @@ This allows us to update the upper bound for the closeness centrality of $w$ che
  }
 
  \ForAll{$w \in A(u, v)$}{ \label{alg:dynamicInsertionLoop}
-    
+
+	\tcc{Initially, we assume that we need a new pruned BFS for this node}
+	$\texttt{newBfs} \gets \texttt{true}$ \\
     
     \uIf{$d_{cutoff}(w) < d_G^f(w) \land \texttt{!isExact}(w) \land r_{old}(w) = r(w)$}{
         \tcc{The inserted edge is beyond the cutoff threshold of the original pruned BFS from $w$. We do not need to do anything to recompute $h(w)$ in this case.}
+        $\texttt{newBfs} \gets \texttt{false}$
     }
     \uElseIf{$d_G^f(w) = d_{cutoff}(w) \land !\texttt{isExact}(w) \land r_{old}(w) = r(w)$}{
         \tcc{$w$ is a boundary node and $h(w)$ can be updated cheaply with Equation~\ref{eq:cheapBoundaryUpdate}.}
-      $h(w) \gets h(w) - \frac{1}{d_{cutoff}[w] + 2} + \frac{1}{d_{cutoff}[w] + 1}$ \\
-    } 
-    \uElse{
+      $h(w) \gets h(w) - \frac{1}{d_{cutoff}(w) + 2} + \frac{1}{d_{cutoff}(w) + 1}$ \\
+      
+      \If{$h(w) < x_k$}{
+        $\texttt{newBfs} \gets \texttt{false}$
+      }
+    }
+    
+    \If{\texttt{newBfs}}{
     	\tcc{No optimization is applicable, we have to perform a new pruned BFS-}
       	$(h, \texttt{isExact}, d_{cutoff}) \gets $ \texttt{BFSCut}($w, x_k$) \\
   	
   	    $h(w) \gets h$\\
-  	    $\texttt{isExact}(v) \gets \texttt{isExact}$\\f
+  	    $\texttt{isExact}(v) \gets \texttt{isExact}$\\
   	    $d_{cutoff}(w) \gets d_{cutoff}$ \\
     }
 
@@ -553,7 +561,7 @@ If the there is an exact value for the closeness centrality of $w$ and, it can b
 \FloatBarrier
 
 \subsection{Dynamic closeness centrality in networks with large diameters}
-We recall that the algorithm for complex networks performs a pruned BFS from every single node in the graph. On the contrary, the algorithm for street networks always performs a complete BFS for some nodes in order to compute upper bounds for all the other nodes in the graph (Section~\ref{sec:largeDiameterStatic}, Algorithm~\ref{alg:streetNetworksStatic}). Since there is either a complete BFS or no BFS at all for each node, there is no cutoff level that could be used to skip far-away nodes after an edge insertion or to update the upper bounds of boundary nodes cheaply. However, it is possible to compute an upper bound for the \emph{improvement} of the closeness centrality of each node after an edge insertion. In the case of edge removals, we use the same algorithm for street networks as we do for complex networks (see Section~\ref{alg:dynamicTopClosenessRemoval}).
+We recall that the algorithm for complex networks performs a pruned BFS from every single node in the graph. On the contrary, the algorithm for street networks always performs a complete BFS for some nodes in order to compute upper bounds for all the other nodes in the graph (Section~\ref{sec:largeDiameterStatic}, Algorithm~\ref{alg:streetNetworksStatic}). Since there is either a complete BFS or no BFS at all for each node, there is no cutoff level that could be used to skip far-away nodes after an edge insertion or to update the upper bounds of boundary nodes cheaply. However, it is possible to compute an upper bound for the \emph{improvement} of the closeness centrality of each node after an edge insertion. In the case of edge removals, we use the same algorithm for street networks as we do for complex networks (see Section~\ref{sec:dynamicTopClosenessRemoval}).
 
 \subsubsection{Level-based improvement bounds}
 \label{sec:levelBasedImprovementBounds}
@@ -570,41 +578,95 @@ The improvement for the closeness centrality of $u$ after the insertion of the e
 \end{align}
 \end{definition}
 
-We will now show that $h_{impr}(u)$ is an upper bound for the improvement of the closeness centrality of \emph{all} affected nodes. First, we consider the contribution to the improvement of an affected node $x$ and a corresponding sink node $w$. Let $h_{impr}(x, w) = \frac{1}{d_{G'}(x, w)} - \frac{1}{d_{G}(x, w)} $ denote the improvement of the contribution of the node pair $(x, w)$ to the closeness centrality of $x$. We want to show that 
+\begin{definition}
+The improvement of the contribution of the node pair $(x, w)$ to the closeness centrality of $x$ after the insertion of the edge $(u, v)$ is 
+\begin{align}
+	h_{impr}(x, w) = \frac{1}{d_{G'}(x, w)} - \frac{1}{d_{G}(x, w)}
+\end{align}
+\end{definition}
+
+We will now show that $h_{impr}(u)$ is an upper bound for the improvement of the closeness centrality of \emph{all} affected nodes. First, we consider the contribution to the improvement of an affected node $x$ and a corresponding sink node $w$. We want to show that 
 \begin{align}
 	h_{impr}(u, w) &\geq h_{impr}(x, w) \nonumber \\
 	\iff \frac{1}{d_{G'}(u, w)} - \frac{1}{d_{G}(u, w)} &\geq \frac{1}{d_{G'}(x, w)} - \frac{1}{d_{G}(x, w)} \label{eq:contributionImprovement}.
 \end{align}
-In the old graph, a shortest path between $x$ and $w$ either contains $u$ or it does not. In either case, $d_G(x, w) > d_G(u, w)$ because otherwise $x$ would not be an affected node. Since the new shortest path will contain the edge $(u, v)$, we also know that $d_{G'}(x, w) > d_{G'}(u, w)$. However, we cannot guarantee that $d_G(u, w) < d_G(x, w)$, since there could be a shorter path from $x$ to $w$ in $G$ that does not contain $u$. We rewrite Equation~\ref{eq:contributionImprovement}
+In the old graph, a shortest path between $x$ and $w$ either contains $u$ or it does not. In either case, $d_G(x, w) > d_G(u, w)$ because otherwise $x$ would not be an affected node. Since the new shortest path will contain the edge $(u, v)$, we also know that $d_{G'}(x, w) > d_{G'}(u, w)$. However, we cannot guarantee that $d_G(u, w) < d_G(x, w)$, since there could be a shorter path from $x$ to $w$ in $G$ that does not contain $u$.
+
+We define $\Delta(u) := d_G(u, w) - d_{G'}(u, w)$ and $\Delta(x) := d_G(x, w) - d_{G'}(x, w)$. We rewrite Equation~\ref{eq:contributionImprovement}:
 \begin{align}
-    \frac{1}{d_{G'}(u, w)} &&-&& \frac{1}{d_{G}(u, w)} &&\geq && \frac{1}{d_{G'}(x, w)} &&-&& \frac{1}{d_{G}(x, w)} \nonumber \\ 
-	\frac{1}{o} &&-&& \frac{1}{o + p} &&\geq && \frac{1}{o + q} &&-&& \frac{1}{o + q + r} \label{eq:contributionImprovementRewritten}
+	\frac{1}{d_{G'}(u, w)} - \frac{1}{d_{G'}(u, w) + \Delta(u)} &\geq \frac{1}{d_{G'}(x, w)} - \frac{1}{d_{G'}(x, w) + \Delta(x)}
 \end{align}
-with $o, p, q, r > 0$. We set $o := d_{G'}(u, w)$. Since we know that $d_G(u, w) > d_{G'}(u, w)$, we can write $d_G(u, w)$ as $o + p$. We also know that $d_{G'}(x, w) > d_{G'}(u, w)$, so we write $d_{G'}(x, w)$ as $o + q$. Since $d_{G}(x, w) > d_{G'}(x, w)$, we write $d_G(x, w)$ as $o + q + r$.
 
-Since $o$ and $q$ are positive, $\frac{1}{o} > \frac{1}{o + q}$. In order to prove that the inequality holds, we have to show that $\frac{1}{o + q + r} \geq \frac{1}{o + p}$. Since it is possible that the shortest path from $x$ to $w$ in $G$ does not contain $u$, we can state that $d_G(x, w) - d_{G'}(x, w) \leq d_G(u, w) - d_{G'}(u, w)$. In practical terms, this means that the improvement of the distance of all affected nodes $x$ is at most as large as it is for $u$. If the shortest path in the old graph contains $u$, the distance improvement for $u$ ($p$ in Equation~\ref{eq:contributionImprovementRewritten}) and $x$ ($r$ in Equation~\ref{eq:contributionImprovementRewritten}) to $w$ is exactly the same. Otherwise, it is possible that the distance improvement for $x$ is smaller since $d_G(x, w) < d_G(x, u) + d_G(u, w)$. It follows that $r \leq p$ in Equation~\ref{eq:contributionImprovementRewritten}. 
+Since it is possible that the shortest path from $x$ to $w$ in $G$ does not contain $u$, we can state that $\Delta(x) \leq \Delta(u)$. In practical terms, this means that the improvement of the distance of all affected nodes $x$ is at most as large as it is for $u$. If the shortest path in the old graph contains $u$, the distance improvement for $u$ and $x$ to $w$ is exactly the same. Otherwise, it is possible that the distance improvement for $x$ is smaller since $d_G(x, w) < d_G(x, u) + d_G(u, w)$.
 
-Finally, we get
- \begin{align}
-	\frac{1}{o} - \frac{1}{o + p} \geq \frac{1}{o + q} - \frac{1}{o + q + p}
-\end{align}
-which holds for $o, p, q > 0$. Since we now know that $h_{impr}(x, w) \leq h_{impr}(u, w)$ for any affected node $x$ and a given sink node $w$, and that $|S_x| \leq |S_u|$, we can conclude that $h_{impr}(x) \leq h_{impr}(u)$ for any affected node $x$. 
+Since $\Delta(x)$, $\Delta(u)$ and all the distances are larger than $0$, we only have to show that the inequality holds for $\Delta(x) \in [0, \Delta(u)]$. For $\Delta(x) = 0$ we get the inequality
+\begin{align*}
+	\frac{1}{d_{G'}(u, w)} - \frac{1}{d_{G'}(u, w) + \Delta(u)} &\geq \frac{1}{d_{G'}(x, w)} - \frac{1}{d_{G'}(x, w) + 0} \\
+	\frac{1}{d_{G'}(u, w)} - \frac{1}{d_{G'}(u, w) + \Delta(u)} &\geq 0
+\end{align*} 
+which trivially holds. In the other case, we set $\Delta(x) = \Delta(u)$ and get
+\begin{align*}
+	\frac{1}{d_{G'}(u, w)} - \frac{1}{d_{G'}(u, w) + \Delta(u)} &\geq \frac{1}{d_{G'}(x, w)} - \frac{1}{d_{G'}(x, w) + \Delta(u)} 
+\end{align*}
+which also holds if all the terms are positive.
+
+Since we now know that $h_{impr}(x, w) \leq h_{impr}(u, w)$ for any affected node $x$ and a given sink node $w$, and that $|S_x| \leq |S_u|$, we can conclude that $h_{impr}(x) \leq h_{impr}(u)$ for any affected node $x$. 
 
 We can improve this upper bound for $h_{impr}(x)$ further. We know that the new shortest path between $x$ and $w$ contains the inserted edge $(u, v)$, and thus $d_{G'}(x, w) = d_{G'}(x, u) + d_{G'}(u, w)$. Equation~\ref{eq:levelImprovementBound} can be used to compute the improvement of $u$. However, this bound is not as tight as it could be for nodes which are further away from the edge insertion than $u$. For instance, it does make a larger difference for the harmonic closeness centrality if the distance between two nodes changes from $3$ to $2$ than it does if the distance changes from $8$ to $7$, since $\frac{1}{2} - \frac{1}{3} > \frac{1}{7} - \frac{1}{8}$. We can adapt Equation~\ref{eq:levelImprovementBound} to provide an upper bound for the improvement for nodes with distance $j$ to the edge insertion:
 \begin{align}
 	h_{impr,LB}(j) = \sum_{i}{\frac{1}{i + j} \cdot \left(\Phi_{G'}^i \cdot - \Phi_G^i\right)}.
 \end{align}
 
+Figure~\ref{fig:levelBasedImprovementBounds} shows an example how level-based improvement bounds work. We insert an edge between $u$ and $v$ into a directed graph. Sink nodes are marked in blue, affected nodes in a shade of yellow (excluding $u$, which is also affected). While node $u$ has a new shortest path to each of the sink nodes, there are affected nodes like $u_1$ and $u_3$ which already have a shorter path to some of the sink nodes. The further an affected node is from the inserted edge, the smaller is the maximum improvement. This is indicated by a lighter shade of yellow in the figure.
+
 
 \paragraph{Computing level-based improvement bounds}
 In order to use level-based improvement bounds, we need to compute $\Phi_G^i$ and $\Phi_{G'}^i$. This can be done with two breadth-first searches on $G$ and $G'$ starting in $u$. On undirected graphs, the algorithm to compute the affected nodes of an edge insertion already computes the distances of all nodes to $u$ in both $G$ and $G'$. Knowing the distances $d_G(u, w)$ and $d_{G'}(u, w)$ for each node $w$ allows us to count the number of nodes with each distinct distance. In the directed case, we need to to perform an additional forward BFS from $u$ in order to compute the distances and then $\Phi_G^i$ and $\Phi_{G'}^i$.
 
-\todo{Reference Figure~\ref{fig:levelBasedImprovementBounds}}
+Algorithm~\ref{alg:levelBasedImprovementBounds} outlines the steps to compute the level-based improvement bounds in a directed graph.
+
+\subparagraph{Complex networks}
+We have also integrated this optimization in our dynamic algorithm for edge insertions in complex networks. We add the level-based improvement bound to the old closeness centrality of a node if the other two optimizations, skipping far-away nodes and cheaply updating boundary nodes, cannot be applied. If the resulting upper bound is smaller than the closeness centrality of the $k$-th most central node, we do not need to run a new pruned BFS for this node.
 
 \subsubsection{Recomputing closeness centralities after edge insertions}
-The algorithm that updates closeness centralities in networks with large diameters after edge insertions is based on the static algorithm for the problem which was presented in Section~\ref{sec:largeDiameterStatic}. Algorithm~\ref{alg:streetNetworksDynamic} outlines the dynamic algorithm. First, the affected nodes and the maximum possible improvement of the closeness centrality of each affected node are computed (Line~\ref{alg:computeAffectedNodesStreetNetworks} and~\ref{alg:computeImprovement}). As in the algorithm for complex networks, affected nodes are removed from the priority queue \texttt{Top} which manages the $k$ most central nodes (Line~\ref{alg:removeAffectedNodesFromTopQueue}). The computed maximum improvement for each node is added in Line~\ref{alg:addImprovementDynamic}.
+The algorithm that updates closeness centralities in networks with large diameters after edge insertions is based on the static algorithm for the problem which was presented in Section~\ref{sec:largeDiameterStatic}. Algorithm~\ref{alg:streetNetworksDynamic} outlines the dynamic algorithm. First, the affected nodes and the maximum possible improvement of the closeness centrality of each affected node are computed (Line~\ref{alg:computeAffectedNodesStreetNetworks} and~\ref{alg:computeImprovement}). As in the dynamic algorithm for complex networks, affected nodes are removed from the priority queue \texttt{Top} which manages the $k$ most central nodes (Line~\ref{alg:removeAffectedNodesFromTopQueue}). The computed maximum improvement for each node is added in Line~\ref{alg:addImprovementDynamic}.
 
 The algorithm then iterates over each affected node $w$ (Line~\ref{alg:streetNetworksLoopDynamic}). If the current known upper bound in \texttt{score} is smaller than the exact closeness centrality of the $k$-th most central node, the recomputation step can be skipped (Line~\ref{alg:skipNodesStreetNetworksDynamic}). Otherwise, the algorithm handles $w$ exactly as in the static case. It computes the exact closeness of $w$ (Line~\ref{alg:updateBoundsCallDynamic}) and updates the upper bounds of other nodes in the graph if possible (Line~\ref{alg:updateScoresDynamic}). At last, the \texttt{Top} queue is updated if $w$ has a larger exact closeness centrality than the current $k$-th most central node.
+
+\begin{algorithm2e}[h!]
+ \label{alg:levelBasedImprovementBounds}
+ \KwData{$G = (V, E), (u, v) \notin G$}
+ \KwResult{$h_{impr}(w) \forall w \in A(u, v)$}
+ 
+ $G' \gets G \cup \{u, v\} $ \\
+ $A(u, v) \gets \texttt{AffectedNodes}(u, v)$ \\
+ $d_{G} \gets $ BFS from $u$ in $G$ \\
+ $d_{G'} \gets $ BFS from $u$ in $G'$ \\
+ $\Delta \gets max\;d^-$
+ 
+ \tcc{Count the number of nodes on each level from $u$}
+ \For{$i \leq \Delta$}{
+   $\Phi_G^i \gets \left|\left\{w \in V \mid d_G(w) = i\right\}\right|$ \\
+   $\Phi_{G'}^i \gets \left|\{w \in V \mid d_{G'}(w) = i\}\right|$ \\
+ }
+ 
+ \tcc{Compute the improvement bound for each level}
+ \For{$1 \leq i \leq \Delta$}{
+   $h_{impr,LB}(i) \gets 0$ \\
+   \For{$1 \leq j \leq \Delta$}{
+     $h_{impr,LB}(i) \gets h_{impr,LB}(i) + \frac{1}{i + j} \cdot (\Phi_{G'}^j - \Phi_{G}^j)$
+   }  
+ }
+ 
+ \tcc{Select the correct bound for each affected node based on its distance to $u$}
+ $d_{reverse} \gets $ reverse BFS from $u$
+ \ForEach{$w \in A(u, v)$}{
+   $h_{impr}(w) \gets h_{impr,LB}(d_{reverse}(w))$
+ }
+ 
+
+ \caption{Computation of the level-based improvement bound for each affected node in a directed graph}
+\end{algorithm2e}
 
 \begin{algorithm2e}[h!]
  \label{alg:streetNetworksDynamic}
@@ -612,7 +674,7 @@ The algorithm then iterates over each affected node $w$ (Line~\ref{alg:streetNet
  \KwResult{A list with the $k$ nodes with the highest closeness}
  
  Compute the set of affected nodes $A(u, v)$ \label{alg:computeAffectedNodesStreetNetworks} \\
- Compute an upper bound for the improvement for each node \texttt{maxImprovement} \label{alg:computeImprovement} \\
+ $\texttt{maxImprovement} \gets $ level-based improvement for each node with Algorithm~\ref{alg:levelBasedImprovementBounds} \label{alg:computeImprovement} \\
  
  \texttt{Q} $\gets A(u, v)$, sorted by decreasing previous upper bound for the closeness centrality \\
  \texttt{score} $\gets $ array indexed by node ID storing the current upper bounds for all nodes
@@ -666,9 +728,9 @@ The algorithm then iterates over each affected node $w$ (Line~\ref{alg:streetNet
     \node[oldShortestPath] (o1) [below left = 0.71cm and 0.71cm of u] {};
     \node[oldShortestPath] (o2) [below right = 0.71cm and 0.71cm of u] {};
     
-    \node[level1] (u1) [above left = 2cm and 2cm of u] {};
+    \node[level1] (u1) [above left = 2cm and 2cm of u] {$u_1$};
     \node[level1] (u2) [above = 2cm of u] {};
-    \node[level1] (u3) [above right = 2cm and 2cm of u] {};
+    \node[level1] (u3) [above right = 2cm and 2cm of u] {$u_3$};
     
     \node[level2] (u4) [above left = 2cm and 2cm of u1] {};
     \node[level2] (u5) [above = 2cm of u2] {};

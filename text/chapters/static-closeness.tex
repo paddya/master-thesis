@@ -238,8 +238,6 @@ The \texttt{updateBounds} function is outlined in Algorithm~\ref{alg:updateBound
 
 After the call to \texttt{updateBounds} returns, Algorithm~\ref{alg:streetNetworksStatic} updates \texttt{score}. If the upper bound for a node $u$ returned by the function is smaller than the previous upper bound stored in \texttt{score[$u$]}, the array is updated with the new, tighter upper bound (Line~\ref{alg:updateScores}). In order to keep the list of the $k$ most central up-to-date, the active node $v$ is inserted with its exact closeness centrality as the priority into \texttt{Top} if the exact closeness centrality of $v$ is larger than that of the $k$-th node in \texttt{Top} (Line~\ref{alg:updateTop}). If \texttt{Top} contains more than $k$ elements, the node with the smallest closeness is removed from the list.
 
-\todo{Mention parallelization}
-
 \begin{algorithm2e}[h!]
  \label{alg:streetNetworksStatic}
  \KwData{$G = (V, E)$}
