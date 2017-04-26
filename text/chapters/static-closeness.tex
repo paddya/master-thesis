@@ -95,7 +95,7 @@ Since the components are traversed in reverse topological order, the upper bound
 \subsection{Pruned breadth-first search}
 In order to compute the closeness centrality of a single node in an unweighted graph, a complete breadth-first search starting from that node is necessary. The algorithm only requires the exact closeness centrality of the $k$ most central nodes. Therefore, the breadth-first searches can be aborted early for many nodes, once the upper bound obtained with Equation~\ref{eq:harmonicClosenessUpperBound} is smaller than the exact closeness centrality of the $k$-th most central node among the already processed nodes. Algorithm~\ref{alg:bfsCutStatic} outlines the steps necessary to perform such a pruned BFS. The algorithm is structured like a standard BFS, but also keeps track of the closeness centrality of the source node. The algorithm sums the inverse distances of all visited nodes in $h$ (Line~\ref{alg:inverseDistanceSum}). Once the BFS reaches a new level (Line~\ref{alg:newLevel}), $\widetilde{h}$ is updated (Line~\ref{alg:upperBoundUpdate}). If the new upper bound is smaller than the known exact closeness $x_k$ of the $k$-th node, the algorithm returns with the last computed upper bound and a flag that indicates that the value is not exact. The algorithm also keeps track of an upper bound $\widetilde{\gamma}$ for the number of nodes on level $d + 1$ by summing the out-degrees of all nodes on level $d$ (Line~\ref{alg:gammaUpdateDirected} and Line~\ref{alg:gammaUpdateUndirected}). If the search encounters a node $w$ that has already been marked as visited, that node must be on a level $l < d$. It is then possible to compute a new, lower upper bound $\widetilde{h}$ in some cases (Line~\ref{alg:boundAdjustment}).
 
-\begin{algorithm2e}[h!]
+\begin{algorithm2e}[hb!]
  \label{alg:bfsCutStatic}
  \KwData{$G = (V, E), v, x_k$}
  \KwResult{A tuple $(h, isExact)$ with $isExact = $\texttt{false} if $h$ is only an upper bound for the exact harmonic closeness centrality.}
@@ -139,7 +139,7 @@ In order to compute the closeness centrality of a single node in an unweighted g
    return $(h, \texttt{true})$
  }
  
- \caption{BFScut()}
+ \caption{Pruned BFS}
 \end{algorithm2e}
 
 \subsection{Algorithm outline}

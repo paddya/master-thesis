@@ -1,4 +1,4 @@
-\chapter{Top-k closeness for dynamic graphs}
+\chapter{Top-k closeness centrality for dynamic graphs}
 \label{ch:dynamicCloseness}
 
 Many algorithms from the field of network analysis, including the algorithms from Chapter~\ref{ch:staticCloseness}, are designed to be run only once on a static graph. This does not match the requirements of many real-world applications. In social networks like Facebook or Twitter, the underlying social graph changes constantly. There are always new users who join a social network, some others leave; existing users befriend other users or end virtual friendships. The structure of the underlying social graph always changes, and therefore every metric in the network also changes.
@@ -20,10 +20,24 @@ We will use \emph{edge modification} as a collective term for both edge insertio
 
 We also define the \emph{distance to the edge modification} as $d_G^f(w, (u, v)) := \min{(d_G(w, u), d_G(w, v))}$ for undirected graphs. In directed graphs, only the distance to the source node $u$ of the edge is relevant and we get $d_G^f(w, (u, v)) = d_G(w, u)$.
 
-\todo{Short section about dynamic closeness}
+\section{Dynamic closeness centrality}
 
-\section{Dynamic Top-k closeness}
+Sar{\i}yüce et al. propose a dynamic algorithm to update the closeness centralities of all nodes in an unweighted graph after edge insertions or edge deletions in \cite{sariyuce2013incremental}. The algorithm performs a breadth-first search starting from each node to compute the pairwise distances between all nodes. During this search, the algorithm also computes the total distance of the start node to all other nodes. The total distance is used to compute the closeness centrality of the start node. 
+
+The authors present several optimizations that make the dynamic algorithm more efficient on complex real-world networks. Let $G = (V, E)$ denote the base graph and $G' = (V, E \cup \{u, v\})$ the modified graph. The authors show that any node $s \in V$ with $|d_G(s, u) - d_G(s, v)| \leq 1$ is unaffected by the edge insertion. The recomputation of the closeness centrality can be skipped for these nodes.
+
+The algorithm also maintains the biconnected components of the graph. A biconnected component is a subgraph of $G$ from which any node $v$ can be removed while the graph still stays connected. Each edge belongs to only one biconnected component, but a node can belong to multiple biconnected components. A node $v$ is called \emph{articulation vertex} if the  graph $G - v$ has more connected components than $G$. After an edge insertion, the biconnected components of the graph are updated and the new edge is assigned to one of the biconnected components. The authors show that is possible to update the closeness centralities of all nodes by running a new BFS for each node in the biconnected component of the new edge. The new closeness centrality for nodes of the biconnected component is component with the new BFS. For each of the other nodes, a representative node from the biconnected component can be chosen. The closeness centrality of these other nodes can be updated based on the change of the total distance of its representative node.
+
+The third optimization is based on identifying nodes with equal or similar neighborhoods. The authors propose two kinds of identical nodes: \emph{type-I-identical} nodes have the exact same neighborhood. Nodes are \emph{type-II-identical} if $\{u\} \cup N(u) = \{v\} \cup N(v)$. In both cases, the closeness centralities of all nodes in the same class are identical. Therefore, it is enough to compute the closeness centrality for one representative of a class of nodes.
+
+At last, the authors propose a more efficient algorithm for breadth-first searches in complex networks. They call the approach \emph{SSSP hybridization}. In complex networks, there often is a spike-shaped distribution of the distances in the network. The standard algorithm for a breadth-first search visits the node in a \emph{top-down} manner, that is, the nodes on level $k$ are used to discover the nodes on level $k + 1$. At some point, the number of remaining unvisited nodes is smaller than the number of nodes on level $k$. It makes sense to check if the remaining nodes have a neighbor on level $k$ in order to find out if they are on level $k + 1$.
+
+The worst-case time complexity of the algorithm is $\mathcal{O}(n \cdot (n + m))$, which is the same as re-computing the closeness centralities from scratch. The algorithm keeps track of all pairwise distances in the graph, therefore the space complexity is $\mathcal{O}(n^2)$. 
+
+\section{Dynamic Top-k closeness centrality}
 We will now describe two new algorithms to update the list of the $k$ most central nodes in a graph after an edge modification. The first algorithm is based on the static algorithm by Borassi et al. presented in Section~\ref{sec:topKClosenessComplex}. It works especially well on networks with small diameter. The second algorithm is based on the static algorithm for networks with large diameter by Bergamini et al. which is described in Section~\ref{sec:largeDiameterStatic}. The adaptations of both algorithms for the dynamic case both follow the static version closely. However, the dynamic versions will try to use previously collected information in order to skip some of the work the static versions have to do.
+
+In any case, our dynamic algorithms only use a linear amount of additional memory. It is not required to store all pairwise distances.
 
 In general, it makes sense to only process nodes which are actually \emph{affected} by an edge modification. 
 
@@ -100,6 +114,64 @@ It is not practical to construct separate instances $G^-$ and $G^{+}$ of the gra
 
 \paragraph{Undirected graphs}
 Finding the affected nodes on undirected graphs requires more computational effort. As illustrated in Figure~\ref{fig:affectedNodesUndirectedBfs}, those nodes can either have a different distance to $u$ or to $v$. In the undirected case, we basically run the algorithm from the directed case twice. Once we start the breadth-first searches from $u$ and and once from $v$. The set of the affected nodes is the union of all nodes whose distance to either $u$ or $v$ is different in $G^-$ and $G^{+}$.
+
+\begin{figure}[h!]
+\centering
+\begin{minipage}{.45\textwidth}
+  \centering
+
+	\begin{tikzpicture}
+	  \tikzset{edge/.style = {-,> = latex'}}
+	
+      \node[main node,fill=blue!50] (u) {$u$};
+      \node[main node,fill=red!50] (v) [below = 2cm of u] {$v$};
+      \node[main node,fill=red!30] (u1) [above left = 2cm and 1.5cm of u] {};
+      \node[main node,fill=red!30] (u2) [above = 2cm of u] {};
+      \node[main node,fill=red!30] (u3) [above right = 2cm and 1.5cm of u] {};
+      \node[main node,fill=blue!30] (v1) [below left = 2cm and 1.5cm of v] {};
+      \node[main node,fill=blue!30] (v2) [below = 2cm of v] {};
+      \node[main node,fill=blue!30] (v3) [below right = 2cm and 1.5cm of v] {};
+    
+      \draw[dashed] (u) to (v);
+      \draw[edge] (u) to (u1);
+      \draw[edge] (u) to (u2);
+      \draw[edge] (u) to (u3);
+      \draw[edge] (v) to (v1);
+      \draw[edge] (v) to (v2);
+      \draw[edge] (v) to (v3);
+    \end{tikzpicture}
+  
+  \captionof{figure}{Computing affected nodes in undirected graphs}
+  \label{fig:affectedNodesUndirectedBfs}
+\end{minipage}%
+\hspace{0.1\textwidth}%
+\begin{minipage}{.45\textwidth}
+  \centering
+   \begin{tikzpicture}
+	\tikzset{edge/.style = {->,> = latex'}}
+	
+    \node[main node,fill=blue!50] (u) {$u$};
+    \node[main node,fill=red!50] (v) [below = 2cm of u] {$v$};
+    \node[main node,fill=red!30] (u1) [above left = 2cm and 1.5cm of u] {};
+    \node[main node,fill=red!30] (u2) [above = 2cm of u] {};
+    \node[main node,fill=red!30] (u3) [above right = 2cm and 1.5cm of u] {};
+    \node[main node,fill=white] (v1) [below left = 2cm and 1.5cm of v] {};
+    \node[main node,fill=white] (v2) [below = 2cm of v] {};
+    \node[main node,fill=white] (v3) [below right = 2cm and 1.5cm of v] {};
+    
+    \draw[dashed,->] (u) to (v);
+    \draw[edge] (u1) to (u);
+    \draw[edge] (u2) to (u);
+    \draw[edge] (u3) to (u);
+    \draw[edge] (v) to (v1);
+    \draw[edge] (v) to (v2);
+    \draw[edge] (v) to (v3);
+    \end{tikzpicture}
+    
+    \captionof{figure}{Computing affected nodes in directed graphs}
+   \label{fig:affectedNodesDirectedBfs}
+\end{minipage}
+\end{figure}
 
 \begin{algorithm2e}[h!]
  \label{alg:affectedNodesDirected}
@@ -197,63 +269,7 @@ Finding the affected nodes on undirected graphs requires more computational effo
  \caption{\texttt{PrunedReverseBFS} for edge removals}
 \end{algorithm2e}
 
-\begin{figure}[h!]
-\centering
-\begin{minipage}{.45\textwidth}
-  \centering
 
-	\begin{tikzpicture}
-	  \tikzset{edge/.style = {-,> = latex'}}
-	
-      \node[main node,fill=blue!50] (u) {$u$};
-      \node[main node,fill=red!50] (v) [below = 2cm of u] {$v$};
-      \node[main node,fill=red!30] (u1) [above left = 2cm and 1.5cm of u] {};
-      \node[main node,fill=red!30] (u2) [above = 2cm of u] {};
-      \node[main node,fill=red!30] (u3) [above right = 2cm and 1.5cm of u] {};
-      \node[main node,fill=blue!30] (v1) [below left = 2cm and 1.5cm of v] {};
-      \node[main node,fill=blue!30] (v2) [below = 2cm of v] {};
-      \node[main node,fill=blue!30] (v3) [below right = 2cm and 1.5cm of v] {};
-    
-      \draw[dashed] (u) to (v);
-      \draw[edge] (u) to (u1);
-      \draw[edge] (u) to (u2);
-      \draw[edge] (u) to (u3);
-      \draw[edge] (v) to (v1);
-      \draw[edge] (v) to (v2);
-      \draw[edge] (v) to (v3);
-    \end{tikzpicture}
-  
-  \captionof{figure}{Computing affected nodes in undirected graphs}
-  \label{fig:affectedNodesUndirectedBfs}
-\end{minipage}%
-\hspace{0.1\textwidth}%
-\begin{minipage}{.45\textwidth}
-  \centering
-   \begin{tikzpicture}
-	\tikzset{edge/.style = {->,> = latex'}}
-	
-    \node[main node,fill=blue!50] (u) {$u$};
-    \node[main node,fill=red!50] (v) [below = 2cm of u] {$v$};
-    \node[main node,fill=red!30] (u1) [above left = 2cm and 1.5cm of u] {};
-    \node[main node,fill=red!30] (u2) [above = 2cm of u] {};
-    \node[main node,fill=red!30] (u3) [above right = 2cm and 1.5cm of u] {};
-    \node[main node,fill=white] (v1) [below left = 2cm and 1.5cm of v] {};
-    \node[main node,fill=white] (v2) [below = 2cm of v] {};
-    \node[main node,fill=white] (v3) [below right = 2cm and 1.5cm of v] {};
-    
-    \draw[dashed,->] (u) to (v);
-    \draw[edge] (u1) to (u);
-    \draw[edge] (u2) to (u);
-    \draw[edge] (u3) to (u);
-    \draw[edge] (v) to (v1);
-    \draw[edge] (v) to (v2);
-    \draw[edge] (v) to (v3);
-    \end{tikzpicture}
-    
-    \captionof{figure}{Computing affected nodes in directed graphs}
-   \label{fig:affectedNodesDirectedBfs}
-\end{minipage}
-\end{figure}
 
 \subsection{Dynamic Top-k closeness in complex networks}
 \label{sec:dynamicTopKOptimizations}
@@ -499,6 +515,8 @@ This allows us to update the upper bound for the closeness centrality of $w$ che
 \label{fig:cheapBoundUpdate}
 \end{figure}
 
+\FloatBarrier
+
 \subsubsection{Recomputing closeness centralities after edge removals}
 \label{sec:dynamicTopClosenessRemoval}
 As we have already discussed earlier, the upper bounds of affected nodes remain valid after an edge is removed from the graph. Algorithm~\ref{alg:borassiDynamicRemoval} outlines the steps necessary to update the $k$ most central nodes and their closeness centralities after an edge removal. As in the edge insertion case, the algorithm first computes the set of affected nodes. Since the closeness centralities of affected nodes can only decrease, existing upper bounds stay valid and exact closeness centralities become upper bounds. Therefore, we mark the current closeness centrality of each affected node as an upper bound in Line~\ref{alg:dynamicRemovalNewUpperBounds}. The algorithm starts with an empty priority queue \texttt{Top} which manages the $k$ most central nodes  (Line~\ref{alg:dynamicRemovalTop}).
@@ -562,6 +580,7 @@ If the there is an exact value for the closeness centrality of $w$ and, it can b
 
 \subsection{Dynamic closeness centrality in networks with large diameters}
 We recall that the algorithm for complex networks performs a pruned BFS from every single node in the graph. On the contrary, the algorithm for street networks always performs a complete BFS for some nodes in order to compute upper bounds for all the other nodes in the graph (Section~\ref{sec:largeDiameterStatic}, Algorithm~\ref{alg:streetNetworksStatic}). Since there is either a complete BFS or no BFS at all for each node, there is no cutoff level that could be used to skip far-away nodes after an edge insertion or to update the upper bounds of boundary nodes cheaply. However, it is possible to compute an upper bound for the \emph{improvement} of the closeness centrality of each node after an edge insertion. In the case of edge removals, we use the same algorithm for street networks as we do for complex networks (see Section~\ref{sec:dynamicTopClosenessRemoval}).
+
 
 \subsubsection{Level-based improvement bounds}
 \label{sec:levelBasedImprovementBounds}

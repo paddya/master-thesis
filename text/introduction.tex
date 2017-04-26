@@ -21,7 +21,7 @@ Computing the closeness centrality of a node in an unweighted graph requires a c
 
 For some applications, however, it is enough to compute a list of the $k$ most central nodes. This problem is called \emph{Top-k closeness}. Limiting the problem to the $k$ most central nodes can decrease the required computational effort significantly. It is only necessary to compute the exact closeness centrality of the $k$ most central nodes to rank them. For all other nodes, it is sufficient to obtain an upper bound for their closeness that is smaller than the exact closeness of the $k$-th most central node.
 
-\todo{Mention algorithms for dynamic closeness}
+%\todo{Mention algorithms for dynamic closeness}
 
 \paragraph{Dynamic Top-k closeness centrality}
 
@@ -34,7 +34,7 @@ The concept of closeness centralities for single nodes can be extended to groups
 
 
 \paragraph{Contributions}
-This thesis contributes a dynamic algorithm for Top-k closeness that handles both edge insertions and edge removals. It is based on the static algorithm first proposed by Borassi et al for complex networks in ~\cite{borassi2015fast}, and the additional optimizations for street networks proposed by Bergamini et al. in ~\cite{bergamini2016computing}. Our algorithm re-uses information obtained by an initial run of the static algorithm and tries to skip the re-computation of closeness centralities for nodes that are unaffected by modifications of the graph. In some cases, even the upper bounds for the closeness centralities of affected nodes can be updated with little computational effort.
+This thesis contributes a dynamic algorithm for Top-k closeness that handles both edge insertions and edge removals. It is based on the static algorithm first proposed by Borassi et al for complex networks in ~\cite{borassi2015fast}, and the additional optimizations for street networks proposed by Bergamini et al. in ~\cite{bergamini2016computing}. Our algorithm re-uses information obtained by an initial run of the static algorithm and tries to skip the re-computation of closeness centralities for nodes that are unaffected by modifications of the graph. In some cases, even the upper bounds for the closeness centralities of affected nodes can be updated with little computational effort. Our dynamic algorithms require only a linear amount of additional memory.
 
 We also contribute an algorithm to update the group of nodes with the highest group closeness after an edge insertion. It is based on Bergamini and Meyerhenke's improved version of the algorithm by Chen et al. The basic idea is to verify whether the choices of the greedy algorithm are still valid on the modified graph with as little computational expense as possible. Once the greedy algorithm would choose a different node than on the previous graph, the dynamic algorithm discards all information from the previous run and falls back to the static algorithm.
 
