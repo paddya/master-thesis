@@ -3,5 +3,24 @@
 
 %% ==================
 \chapter{Conclusion}
-\label{ch:Conclusion}
+\label{ch:conclusion}
 %% ==================
+
+We have developed and implemented dynamic algorithms for Top-$k$ closeness centrality for both complex networks and street networks. We initially limit the recomputation of closeness centralities or upper bounds thereof to nodes actually affected by an edge modification. Additionally, we can exploit the fact that we only need to compute the exact closeness centralities for the $k$ most central nodes. We can keep the upper bounds of nodes which are far away from an edge insertion in place and can update the upper bounds of so-called boundary nodes cheaply. At last, we can compute the maximum improvement of the closeness centrality for each node. If the resulting upper bound is smaller than the $k$-th largest closeness centrality, we can use the improvement bound and do not need a new breadth-first search.
+
+Our dynamic algorithm is between 35 and 45 times faster on average than the static algorithm for edge insertions on undirected complex networks. On directed complex networks, the dynamic algorithm is between 15 and 20 times faster. In the best case, our dynamic algorithm is up to 700 times faster for some edges.
+
+We achieve even higher speedups on street networks, improving by a factor of more than 100 on average with directed street networks. In some cases, our dynamic algorithm is up to three orders of magnitudes faster than the static algorithm. Our analysis shows that the speedup is the result of a much lower number of complete breadth-first searches compared to the static algorithm.
+
+We have also implemented an incremental algorithm based on the greedy algorithm for the Maximum Closeness Centrality Group Identification problem. We make use of our dynamic algorithm for Top-$k$ closeness centrality and try to replicate the results of the static algorithm with as little computational effort as possible. We avoid recomputing the marginal gains for as many nodes as possible. Once any node in the group has changed, we fall back to the static algorithm.
+
+The dynamic algorithm is between 8 and 15 times faster than the static algorithm on average, and up to 800 times faster for some inserted edges on the larger networks we have tested.
+
+\paragraph{Future work}
+We have already implemented a simple optimization to speed up the computation of the number of reachable nodes for each node in undirected graphs after an edge insertion. As we have seen in our experimental evaluation, recomputing an upper bound for the number of reachable nodes in directed graphs after edge modifications is a significant bottleneck. There are algorithms that maintain reachability information in directed graphs~\cite{lkacki2013improved,chechik2016decremental} after edge removals. Since these algorithms maintain exact reachability information for single source nodes, it might be impractical to use them for our purposes. However, it might be practical to maintain upper bounds for the number of reachable nodes.
+
+Our dynamic algorithm is currently designed to update the ranking of the $k$ most central nodes after every single edge modification. However, it might not be necessary to update the Top-$k$ nodes after each edge modification. Then it might be possible to coalesce multiple edge insertions or edge removals into a single update operation and still be faster than running the static algorithm. This is called \emph{batch update}. One could compute the set of affected nodes individually for each edge in the batch and compute the union of all these sets. Even far-away nodes could still be skipped for edge insertions if their minimum distance to any of the edges is larger than their previous cutoff level.
+
+In our dynamic algorithm for group closeness, we perform a pruned BFS for each affected node in each iteration of the algorithm. It might be possible to adapt the idea of the level-based improvement bounds for the group closeness algorithm. If it is possible to compute an upper bound for the increase of the marginal gain for all nodes, we could skip the expensive pruned BFS for nodes where we are sure that the new marginal gain will be smaller than the currently known maximum.
+
+

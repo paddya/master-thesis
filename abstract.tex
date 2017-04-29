@@ -3,6 +3,9 @@
 
 \chapter{Abstract}
 
+Closeness is a widely-studied centrality measure in network analysis. Computing the closeness centrality for all nodes in a graph does not scale to large real-world networks because it requires solving the all-pairs-shortest-path problem. For some applications, it is only necessary to find the $k$ most central nodes of a network. Prior work has shown that the Top-$k$ closeness centrality problem can be solved significantly faster on real-world networks than computing the closeness centrality for all nodes in the graph. In this thesis, we expand on this work and propose algorithms for Top-$k$ closeness centrality in dynamic graphs. Instead of recomputing the most central nodes from scratch after each modification of the graph, we use information obtained during earlier computations to update the list of the $k$ most central nodes faster. Our dynamic algorithms handle edge insertions and edge removals in directed and undirected unweighted graphs. We propose separate algorithms for complex social networks and street networks. We achieve speedups of up to three orders of magnitude compared to the static algorithm.
+
+We also study the problem of finding a \emph{group} of $k$ nodes with high closeness. We adapt a static greedy algorithm for the dynamic case. We use our dynamic algorithm for Top-$k$ closeness centrality and employ similar techniques to reduce the number of recomputations for unaffected nodes. On average, our dynamic algorithm is between 8 and 15 times faster, depending on the group size.
 
 
 \vspace{3cm}

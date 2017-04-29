@@ -1,4 +1,4 @@
-\chapter{Static Top-k closeness}
+\chapter{Static Top-$k$ closeness}
 \label{ch:staticCloseness}
 
 Computing the exact closeness centrality of each node in a graph requires solving the \emph{all-pair-shortest-path} (APSP) problem . A simple approach is to compute a breadth-first search (or Dijkstra's algorithm) from each node. This results in a time complexity of $\mathcal{O}(|V| \cdot (|V| + |E|))$ for unweighted graphs and $\mathcal{O}(|V| \cdot (|V|\log{|V|} + |E|))$ for weighted graphs. The Floyd-Warshall algorithm has a time complexity of $\mathcal{O}(n^3)$~\cite{Floyd:1962:A9S:367766.368168}; Johnsons's algorithm for weighted graphs without negative cycles has a time complexity of $\mathcal{O}(|V| \cdot (|V|\log{|V|} + |E|))$~\cite{Johnson:1977:EAS:321992.321993}. There are also algorithms that are based on Fast Matrix Multiplication~\cite{zwick2002all,williams2012multiplying} which solve the problem in $\mathcal{O}(n^{2.3727})$. In practice, methods using graph traversal such as breadth-first search or Dijkstra's algorithm are preferred because real-world graphs are often sparse. Fast Matrix Multiplication algorithms also require more memory. 
@@ -18,7 +18,7 @@ Eppstein and Wang propose a fast approximation algorithm in~\cite{eppstein2001fa
 \end{enumerate}
 Eppstein and Wang show that the expected value of $\frac{1}{\hat{c}_u}$ is equal to $\frac{1}{c_u}$. Using Hoeffding's bound, they also show that for $k = \mathcal{O}(\frac{\log{n}}{\epsilon^2})$ the additive error is at most $\Delta \epsilon$ with high probability, where $\Delta$ denotes the diameter of the graph. The total runtime of the algorithm is $\mathcal{O}\left(\frac{\log{n}}{\epsilon^2} (n \log{n} + m)\right)$ for weighted graphs. For unweighted graphs it is $\mathcal{O}\left(\frac{\log{n}}{\epsilon^2} \cdot (n + m)\right)$.
 
-\section{Top-k closeness centrality}
+\section{Top-$k$ closeness centrality}
 \label{sec:topKClosenessComplex}
 For some real-world applications, it is unnecessary to know the exact closeness centrality and the exact ranking of unimportant nodes. In these cases, it might be enough to compute a list of the $k$ nodes with the highest exact closeness centrality. For all the other nodes it is enough to provide an upper bound that is lower than the exact closeness centrality of the $k$-th most central node.
 

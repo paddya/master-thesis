@@ -1,7 +1,7 @@
 \chapter{Experimental evaluation}
 \label{ch:experiments}
 
-In this chapter, we want to evaluate our dynamic algorithms for Top-k closeness centrality and group closeness. 
+In this chapter, we want to evaluate our dynamic algorithms for Top-$k$ closeness centrality and group closeness. 
 
 \section{Graphs}
 We evaluate our dynamic algorithms on complex networks from the \emph{Stanford Large Network Dataset Collection}~\cite{snapnets} and on street networks from several countries. We have generated the undirected street networks from the directed source file by assuming directed edges to be undirected and then filtering out duplicate edges.
@@ -86,8 +86,8 @@ We evaluate our dynamic algorithms on complex networks from the \emph{Stanford L
 
 \FloatBarrier
 
-\section{Dynamic Top-k closeness centrality}
-First, we want to evaluate our dynamic algorithm for Top-k closeness centrality. We compare our algorithm to the na\"ive approach of simply running the static algorithm again after the graph has changed. We have made our algorithms available through the Python interface of NetworKit and have used Python scripts to collect the data for our experiments. For these experiments, we have used two identical machines with 48 AMD Opteron 6172 cores (clocked at 2.10 GHz) and 256 GB of main memory.
+\section{Dynamic Top-$k$ closeness centrality}
+First, we want to evaluate our dynamic algorithm for Top-$k$ closeness centrality. We compare our algorithm to the na\"ive approach of simply running the static algorithm again after the graph has changed. We have made our algorithms available through the Python interface of NetworKit and have used Python scripts to collect the data for our experiments. For these experiments, we have used two identical machines with 48 AMD Opteron 6172 cores (clocked at 2.10 GHz) and 256 GB of main memory.
 
 \subsection{Methodology}
 Our experiments cover several ``dimensions'':
@@ -265,7 +265,7 @@ Graph & \multicolumn{4}{c|}{k = 1} & \multicolumn{4}{c|}{k = 10} & \multicolumn{
 \label{sec:evaluationEdgeInsertionsStreetNetworks}
 We now want to evaluate our dynamic algorithm on the six street networks from Table~\ref{tbl:streetNetworks}. We run a similar experiment for street networks as we have for complex networks. The only difference is that we only compute the reference time for ten of the intermediate graphs. We then calculate an average of these reference times and compute the speedups based on the average reference time. The results are listed in Table~\ref{tbl:resultsStreetNetworksUndirected} for the undirected street networks and in Table~\ref{tbl:resultsStreetNetworksDirected} for the directed street networks. We observe that the speedups are generally higher for our street networks than for the complex networks.
 
-One reason for this is that, while many nodes might be affected by an edge insertion, their distance to this graph modification is quite large. Since we have implemented our algorithm for harmonic closeness centrality, the actual closeness centralities of affected nodes do not change by a large amount. This also means that applying the level-based improvement bounds for all affected nodes only rarely results in a new upper bound that is larger than the previous $k$-th largest closeness centrality. In these cases, it is often enough to recompute the exact closeness centralities of the affected nodes among the $k$ most central ones. In Table~\ref{tbl:bfsCountUndirected} we compare the number of complete breadth-first searches our dynamic algorithm performs with the static algorithm. It is clear that the dynamic algorithm performs a significantly smaller number of searches. This also explains the large speedups we observe.
+One reason for this is the large diameter of street networks. While many nodes might be affected by an edge insertion, many of them can be pretty far away from the edge insertion. We have already seen earlier that edge modifications in close proximity of a node have a larger effect than far-away edge modification. Therefore, the closeness centrality of these far-away nodes will not change by a great amount. As a result, applying the level-based improvement bounds only rarely results in a new upper bound for a node outside the Top-$k$ that is larger than the old $k$-th largest closeness centrality. It is often enough to apply the level-based improvement bounds for all nodes except the affected nodes among the $k$ most central ones. In Table~\ref{tbl:bfsCountUndirected} we compare the number of complete breadth-first searches our dynamic algorithm performs with the static algorithm. It is clear that the dynamic algorithm performs a significantly smaller number of searches. This also explains the large speedups we observe.
 
 We also observe higher average speedups in directed street networks than in undirected street networks. The reason for this is the lower number of affected nodes in directed networks. This can be seen when comparing the values in Table~\ref{tbl:bfsCountUndirected} and Table~\ref{tbl:bfsCountDirected}.
 
@@ -439,15 +439,15 @@ Graph & \multicolumn{4}{c|}{k = 1} & \multicolumn{4}{c|}{k = 10} & \multicolumn{
 
 
 \section{Group closeness}
-We want to evaluate our dynamic algorithm for group closeness in this section. The experiment is similar to our experiments with dynamic Top-k closeness centrality. We first remove 100 edges randomly from the graph and compute the initial group on the resulting graph. Then, we add these edges back one-by-one and measure the time it takes to recompute the group. As a reference, we run the static algorithm after every ten edge insertions and compute an average of these runtimes.
+We want to evaluate our dynamic algorithm for group closeness in this section. The experiment is similar to our experiments with dynamic Top-$k$ closeness centrality. We first remove 100 edges randomly from the graph and compute the initial group on the resulting graph. Then, we add these edges back one-by-one and measure the time it takes to recompute the group. As a reference, we run the static algorithm after every ten edge insertions and compute an average of these runtimes.
 
-The results are listed in Table~\ref{tbl:groupClosenessResults} for $k \in \{10, 25, 100\}$. Recall that our algorithm tries to minimize the work it takes to replicate the results of the static algorithm as long as the group is unchanged after the edge insertion. After one node in the group has changed, the algorithm falls back to the static algorithm. We expect smaller speedups for larger group sizes because it becomes more likely that any of the nodes has changed, the larger the group is. Our experimental results confirm this expectation. For $k = 10$, we observe a speedup of about $13$ in the geometric mean, while the speedup is only around $7$ for $k = 100$ in the geometric mean.
+The results are listed in Table~\ref{tbl:groupClosenessResults} for $k \in \{10, 25, 100\}$. Recall that our algorithm tries to minimize the work it takes to replicate the results of the static algorithm as long as the group is unchanged after the edge insertion. After one node in the group has changed, the algorithm falls back to the static algorithm. We expect smaller speedups for larger group sizes because it becomes more likely that any of the nodes has changed, the larger the group is. Our experimental results confirm this expectation. For $k = 10$, we observe a speedup of about $15$ in the geometric mean, while the speedup is only about $8$ for $k = 100$ in the geometric mean.
 
 \paragraph{Cutoff points}
 We have also listed the average ``cutoff'' point for each graph. This is either the point where the group is completely computed or when the dynamic algorithm falls back to the static algorithm. We observe that the dynamic algorithm almost never falls back to the static algorithm for $k = 10$. It is much more likely that the group changes for $k = 100$ since the average cutoff point is after about $74$ group members.
 
 \paragraph{Update time distribution}
-The distribution of the update times for group closeness looks similar to the distribution for Top-k closeness centrality. This can be seen in Figure~\ref{fig:updateTimeDistributionGcDblp} for $k = 100$ and the graph \texttt{com-dblp}. The update times for about a third of inserted edges is absolutely minimal compared to the reference time. Another third of the edges have more or less equal update times on a higher level. In the last third, there is a constant increase. For some edges, the update time is close to the reference time. In these cases, there is a large number of affected nodes and the dynamic algorithm falls back to the static algorithm relatively early.
+The distribution of the update times for group closeness looks similar to the distribution for Top-$k$ closeness centrality. This can be seen in Figure~\ref{fig:updateTimeDistributionGcDblp} for $k = 100$ and the graph \texttt{com-dblp}. The update times for about a third of inserted edges is absolutely minimal compared to the reference time. Another third of the edges have more or less equal update times on a higher level. In the last third, there is a constant increase. For some edges, the update time is close to the reference time. In these cases, there is a large number of affected nodes and the dynamic algorithm falls back to the static algorithm relatively early.
 
 \begin{figure}[h!]
 	\includegraphics[width=0.95\textwidth]{figures/{gc_com-dblp.ungraph_100}.pdf}
@@ -456,9 +456,9 @@ The distribution of the update times for group closeness looks similar to the di
 \end{figure}
 
 \paragraph{Iteration times}
-At last, we want to analyze the time it takes to select the $i$-th member of the group and compare our dynamic algorithm to the static algorithm. For this purpose, we measure the iteration times during each update operation and compute an average for each iteration. We do the same for each run of the static algorithm to get a reference.  We have observed two types of graphs: in some graphs, the selecting the first node takes the longest (see Figure~\ref{fig:iterationTimesCaGrQc}); in other graphs, selecting the second node takes longer (see Figure~\ref{fig:iterationTimesDblp}). Later iterations are significantly faster than the first two iterations for all the graphs we have tested.
+At last, we want to analyze the time it takes to select the $i$-th member of the group and compare our dynamic algorithm to the static algorithm. For this purpose, we measure the iteration times during each update operation and compute an average for each iteration. We do the same for each run of the static algorithm to get a reference.  We have observed two types of graphs: in some graphs, selecting the first node takes the longest (see Figure~\ref{fig:iterationTimesCaGrQc}); in other graphs, selecting the second node takes longer (see Figure~\ref{fig:iterationTimesDblp}). Later iterations are significantly faster than the first two iterations for all the graphs we have tested.
 
-Since our dynamic algorithm for Top-k closeness centrality is faster than re-running the static algorithm, the first iteration of our dynamic algorithm for group closeness is also significantly faster than the corresponding static algorithm. Recall that our dynamic algorithm for group closeness only has to recompute the marginal gains for affected nodes in later iterations as long as the group has not changed. The old marginal gains of unaffected nodes become upper bounds and do not have to be recomputed unless the node is not the node with the highest known exact marginal gain. As we have seen earlier, the group often does not change at all or only in a late iteration which leads to a late average cutoff point. Therefore, we also observe much smaller iteration times for later iterations compared to the static algorithm.
+Since our dynamic algorithm for Top-$k$ closeness centrality is faster than re-running the static algorithm, the first iteration of our dynamic algorithm for group closeness is also significantly faster than the corresponding static algorithm. Recall that our dynamic algorithm for group closeness only has to recompute the marginal gains for affected nodes in later iterations as long as the group has not changed. The old marginal gains of unaffected nodes become upper bounds and do not have to be recomputed unless the node is not the node with the highest known exact marginal gain. As we have seen earlier, the group often does not change at all or only in a late iteration which leads to a late average cutoff point. Therefore, we also observe much smaller iteration times for later iterations compared to the static algorithm.
 
 
 \begin{figure}[h!]
@@ -481,22 +481,24 @@ Since our dynamic algorithm for Top-k closeness centrality is faster than re-run
 Graph & \multicolumn{4}{c|}{k = 10} & \multicolumn{4}{c|}{k = 25} & \multicolumn{4}{c}{k = 100}\\
                 &     ref [s] &   gmean &   max &     cutoff &     ref [s] &   gmean &   max &     cutoff &     ref [s] &   gmean &  max &     cutoff \\
 \midrule \midrule
- facebook\_combined    &   0.185 &  13.425 &  16.775 &   10     &   0.214 &  12.396 &  16.6   &   22.4   &   0.272 &   4.556 &   6.248 &   26.35  \\
- ca-GrQc              &   0.23  &  11.949 &  44.743 &    9.96  &   0.282 &   9.014 &  32.801 &   24.3   &   0.576 &   4.527 &  20.536 &   62.2   \\
- as20000102           &   0.235 &   6.408 &  27.596 &    9.76  &   0.271 &   5.371 &  24.983 &   23.72  &   0.43  &   3.342 &   7.412 &   36.44  \\
- oregon1\_010526       &   0.411 &   7.501 &  26.866 &   10     &   0.466 &   9.468 &  27.517 &   24.93  &   0.698 &   4.563 &  10.365 &   61.13  \\
- oregon2\_010526       &   0.45  &  10.827 &  31.441 &   10     &   0.532 &  10.046 &  26.392 &   24.87  &   0.772 &   5.692 &  18.078 &   65     \\
- ca-HepTh             &   0.471 &   9.901 &  44.656 &   10     &   0.572 &   7.448 &  39.717 &   24.47  &   0.885 &   4.328 &  27.774 &   71.19  \\
- ca-HepPh             &   0.611 &  17.87  &  26.56  &   10     &   0.749 &  16.41  &  34.307 &   24.64  &   1.136 &   9.119 &  21.565 &   75.1   \\
- as-caida20071105     &   1.12  &   6.538 &  24.239 &   10     &   1.236 &   6.732 &  24.731 &   24.99  &   1.76  &   5.159 &  20.681 &   77.94  \\
- ca-CondMat           &   1.144 &  10.41  &  29.263 &   10     &   1.401 &  11.819 &  34.703 &   24.77  &   2.138 &   6.015 &  21.897 &   73.71  \\
- email-Enron          &   1.643 &  15.63  &  26.138 &   10     &   1.933 &  14.199 &  30.854 &   25     &   2.734 &   9.355 &  22.631 &   91.51  \\
- loc-brightkite\_edges &   3.018 &  13.49  &  28.242 &   10     &   3.468 &  10.922 &  24.963 &   25     &   5.14  &   6.519 &  24.864 &   80.48  \\
- loc-gowalla\_edges    &  17.426 &  16.947 &  32.629 &   10     &  19.323 &  16.118 &  35.97  &   25     &  26.993 &   8.785 &  32.544 &   96.85  \\
- com-dblp.ungraph     & 121.719 &  21.881 & 147.72  &   10     & 141.551 &  14.791 & 148.484 &   25     & 189.959 &  13.911 & 109.104 &   97.55  \\
- com-amazon.ungraph   & 286.456 &  17.746 & 318.317 &   10     & 305.592 &  18.609 & 288.659 &   24.93  & 346.771 &  10.653 & 193.967 &   98.23  \\
- com-youtube.ungraph  & 746.916 &  29.85  & 282.806 &   10     & 788.207 &  34.138 & 275.085 &   25     & 979.787 &  16.64  & 136.334 &   99.46  \\ \midrule \midrule
- (geometric) mean     &  78.802 &  12.822 &  44.146 &    9.981 &  84.387 &  11.867 &  44.146 &   24.601 & 104.004 &   6.773 &  26.739 &   74.209 \\
+ facebook\_combined    &    0.185 &  13.425 &  16.775 &   10     &    0.214 &  12.396 &  16.6   &   22.4   &    0.272 &   4.556 &   6.248 &   26.35  \\
+ ca-GrQc              &    0.23  &  11.949 &  44.743 &    9.96  &    0.282 &   9.014 &  32.801 &   24.3   &    0.576 &   4.527 &  20.536 &   62.2   \\
+ as20000102           &    0.235 &   6.408 &  27.596 &    9.76  &    0.271 &   5.371 &  24.983 &   23.72  &    0.43  &   3.342 &   7.412 &   36.44  \\
+ oregon1\_010526       &    0.411 &   7.501 &  26.866 &   10     &    0.466 &   9.468 &  27.517 &   24.93  &    0.698 &   4.563 &  10.365 &   61.13  \\
+ oregon2\_010526       &    0.45  &  10.827 &  31.441 &   10     &    0.532 &  10.046 &  26.392 &   24.87  &    0.772 &   5.692 &  18.078 &   65     \\
+ ca-HepTh             &    0.471 &   9.901 &  44.656 &   10     &    0.572 &   7.448 &  39.717 &   24.47  &    0.885 &   4.328 &  27.774 &   71.19  \\
+ ca-HepPh             &    0.611 &  17.87  &  26.56  &   10     &    0.749 &  16.41  &  34.307 &   24.64  &    1.136 &   9.119 &  21.565 &   75.1   \\
+ as-caida20071105     &    1.12  &   6.538 &  24.239 &   10     &    1.236 &   6.732 &  24.731 &   24.99  &    1.76  &   5.159 &  20.681 &   77.94  \\
+ ca-CondMat           &    1.144 &  10.41  &  29.263 &   10     &    1.401 &  11.819 &  34.703 &   24.77  &    2.138 &   6.015 &  21.897 &   73.71  \\
+ ca-AstroPh           &    1.184 &  13.345 &  23.295 &   10     &    1.352 &  12.816 &  26.111 &   24.92  &    1.995 &   8.062 &  22.698 &   80.97  \\
+ email-Enron          &    1.643 &  15.63  &  26.138 &   10     &    1.933 &  14.199 &  30.854 &   25     &    2.734 &   9.355 &  22.631 &   91.51  \\
+ loc-brightkite\_edges &    3.018 &  13.49  &  28.242 &   10     &    3.468 &  10.922 &  24.963 &   25     &    5.14  &   6.519 &  24.864 &   80.48  \\
+ loc-gowalla\_edges    &   17.426 &  16.947 &  32.629 &   10     &   19.323 &  16.118 &  35.97  &   25     &   26.993 &   8.785 &  32.544 &   96.85  \\
+ com-dblp.ungraph     &  121.719 &  21.881 & 147.72  &   10     &  141.551 &  14.791 & 148.484 &   25     &  189.959 &  13.911 & 109.104 &   97.55  \\
+ com-amazon.ungraph   &  286.456 &  17.746 & 318.317 &   10     &  305.592 &  18.609 & 288.659 &   24.93  &  346.771 &  10.653 & 193.967 &   98.23  \\
+ com-youtube.ungraph  &  746.916 &  29.85  & 282.806 &   10     &  788.207 &  34.138 & 275.085 &   25     &  979.787 &  16.64  & 136.334 &   99.46  \\
+ as-skitter           & 3243.8   & 102.091 & 628.851 &   10     & 4259.74  & 130.412 & 807.081 &   25     & 5121.79  &  66.371 & 584.498 &  100     \\ \midrule \midrule
+ (geometric) mean     &  260.413 &  14.521 &  49.708 &    9.984 &  325.111 &  13.726 &  49.708 &   24.644 &  393.167 &   7.826 &  31.751 &   76.124 \\
 \bottomrule
 \end{tabular}
 \caption{Update times for group closeness for 100 random edge insertions with  $k \in \{1, 10, 100\}$ in undirected street networks}{The column ``ref'' contains the average reference time in seconds, ``gmean'' the geometric mean of the achieved speedups, ``max'' the maximum speedup. The column ``cutoff'' contains the average cutoff point.}
