@@ -3,7 +3,7 @@
 
 The concept of closeness centrality can be extended to groups of nodes. Sometimes, an application does not require a list of important nodes, but rather a group of nodes that in combination has a large influence. The most important nodes of a graph are often close to each other, so their ``spheres of influence'' overlap. In other words, the most important nodes might have similar distances to most nodes in the graph. In a group of the most important nodes, the individual contribution of some nodes might therefore be minimal. Instead, it might make more sense to ``spread out'' the nodes of the group over the whole graph in order to minimize the distances to as many nodes as possible.
 
-Chen et al. call this problem \emph{Maximum Closeness Centrality Group Identification} (MCGI) in~\cite{Chen2016}. They show the problem to be NP-hard.
+Chen et al.\ call this problem \emph{Maximum Closeness Centrality Group Identification} (MCGI) in~\cite{Chen2016}. They show the problem to be NP-hard.
 
 \section{Problem definition}
 
@@ -62,10 +62,10 @@ The group closeness function $c(S)$ has two properties that can be exploited to 
 	\item Monotonicity: Given any two sets $S, T \subseteq V$ with $S \subseteq T$, a function $f(x)$ is monotonic, if $f(S) \leq f(T)$.
 	\item Submodularity: Given any two sets $S, T \subseteq V$ with $S \subseteq T$ and $v \in V \setminus T$, a function $f(x)$ is submodular, if $f(S \cup \{v\}) - f(S) \geq f(T \cup \{v\}) - f(T)$.
 \end{itemize}
-Chen et al. provide a proof that the group closeness function has these properties in~\cite{Chen2016}.
+Chen et al.\ provide a proof that the group closeness function has these properties in~\cite{Chen2016}.
 
 \subsection{Greedy algorithm by Chen et al.}
-For any submodular and monotonic function, there is a greedy algorithm that computes a $1 - \frac{1}{e}$ approximation of the optimal solution~\cite{nemhauser1978analysis}. Since the group closeness function is such a function, there exists a greedy algorithm that computes a set $S$ with $k$ nodes that is a $1 - \frac{1}{e}$ approximation of the optimal solution $S^*$. It has a space complexity of $\mathcal{O}(n^2)$ and a time complexity of $\mathcal{O}(n^3 + k \cdot n^2)$. The authors use the Floyd-Warshall algorithm to compute the pairwise distances of all nodes which explains the $n^3$ term in the time complexity.
+For any submodular and monotonic function, there is a greedy algorithm that computes a $1 - \frac{1}{e}$ approximation of the optimal solution~\cite{nemhauser1978analysis}. Since the group closeness function is such a function, there exists a greedy algorithm that computes a set $S$ with $k$ nodes that is a $1 - \frac{1}{e}$ approximation of the optimal solution $S^*$~\cite{Chen2016}. It has a space complexity of $\mathcal{O}(n^2)$ and a time complexity of $\mathcal{O}(n^3 + k \cdot n^2)$. The authors use the Floyd-Warshall algorithm to compute the pairwise distances of all nodes which explains the $n^3$ term in the time complexity.
 
 The greedy algorithm first computes the exact closeness centralities of all nodes in the graph and chooses the node with the highest closeness centrality as the first group member. After that, it always chooses the node that improves the group closeness centrality the most in each iteration.
 
@@ -96,22 +96,22 @@ Algorithm~\ref{alg:chenGroupCloseness} outlines the greedy algorithm. It maintai
   \caption{Greedy algorithm to approximate the group with maximum group closeness}
 \end{algorithm2e}
 
-\subsection{Improvements by Bergamini and Meyerhenke}
-Bergamini et al. improve on the algorithm by Chen et al. with an algorithm that scales to large real-world networks by reducing the memory requirements and skipping unnecessary operations. Algorithm~\ref{alg:bergaminiGroupClosenessLoop} outlines the necessary steps.
+\subsection{Improvements by Bergamini et al.}
+Bergamini et al.\ improve on the algorithm by Chen et al.\ with an algorithm that scales to large real-world networks by reducing the memory requirements and skipping unnecessary operations. Algorithm~\ref{alg:bergaminiGroupClosenessLoop} outlines the necessary steps.
 
-The algorithm by Chen et al. first computes the exact closeness centralities of each node in the graph and then picks the node with the highest closeness centrality as ``start node'' for the group. However, it is only necessary to find the node with the highest closeness centrality, not the closeness centrality of each node in the graph. For that purpose, Bergamini et al. use the algorithm for Top-$k$ closeness centrality from Section~\ref{sec:topKClosenessComplex} to compute the first node of the group (Line~\ref{alg:gcTopKCloseness}).
+The algorithm by Chen et al.\ first computes the exact closeness centralities of each node in the graph and then picks the node with the highest closeness centrality as ``start node'' for the group. However, it is only necessary to find the node with the highest closeness centrality, not the closeness centrality of each node in the graph. For that purpose, Bergamini et al.\ use the algorithm for Top-$k$ closeness centrality from Section~\ref{sec:topKClosenessComplex} to compute the first node of the group (Line~\ref{alg:gcTopKCloseness}).
 
 The algorithm stores the distance of the group to each node in the graph in an array $d_S$. The resulting group closeness centrality of $S$ if a node $u$ was added to $S$ is stored in $Score$. In each iteration of the main loop (Line~\ref{alg:bergaminiGroupClosenessLoop}), the algorithm selects one node for $S$ and updates the distances from $S$ to each node (Line~\ref{alg:gcDistanceUpdate}).
 
 \paragraph{Pruned SSSP}
-The $Score$ for a node $u$ is updated in Line~\ref{alg:gcNewScore} of the algorithm. Since $d_S[w]$ is constant in each iteration, we only need to compute the distances to nodes $w$ where $d(u, w) < d_S[w]$. For this purpose, we use a variant of the single-source-shortest-path (SSSP) algorithm that aborts the search if it reaches a node $w$ with $d(u, w) \geq d_S[w]$. Consider a node $x$ in the subtree of $w$. The shortest path between $u$ and $x$ contains $w$ and therefore $d(u, x) = d(u, w) + d(w, x)$. Since there is a shorter path from $S$ to $w$, it is clear that $d_S[w] + d(w, x) \leq d(u, w) + d(w, x)$. In this case, $w$ is not added to the search queue.
+The $Score$ for a node $u$ is updated in Line~\ref{alg:gcNewScore} of the algorithm. Since $d_S[w]$ is constant in each iteration, we only need to compute the distances to nodes $w$ where $d(u, w) < d_S[w]$. For this purpose, we use a variant of the single-source-shortest-path (SSSP) algorithm that aborts the search for a subtree if it reaches a node $w$ with $d(u, w) \geq d_S[w]$. Consider a node $x$ in the subtree of $w$. The shortest path between $u$ and $x$ contains $w$ and therefore $d(u, x) = d(u, w) + d(w, x)$. Since there is a shorter path from $S$ to $w$, it is clear that $d_S[w] + d(w, x) \leq d(u, w) + d(w, x)$. In this case, $w$ is not added to the search queue.
 
 \paragraph{Submodularity improvement}
 Another optimization exploits the submodularity of the group closeness function to reduce the number of pruned SSSP invocations in Lines~\ref{alg:gcSubLoopStart}-\ref{alg:gcSubLoopEnd} of the algorithm. As stated earlier, a function $f$ is submodular, if $f(S \cup \{v\}) - f(S) \geq f(T \cup \{v\}) - f(T)$ with $S \subseteq T$.
 
 Let $S_i$ with $|S_i| = i$ denote the set computed in the $i$-th iteration of the main loop. Since we only ever add nodes to $S$ and never remove any, we always have $S_i \subset S_{i + 1}$. Due to submodularity, we get $c(S_i \cup \{u\}) - c(S_i) \geq c(S_{i + 1} \cup \{u\}) - c(S_{i + 1})$ for any node $u \in V$. We call $\Delta_i(u) := c(S_i \cup \{u\}) - c(S_i)$ the \emph{marginal gain} of $u$ with respect to $S_i$. It follows that in each iteration $i$, the marginal gain of a node $u$ can only decrease. Note that finding the node with the highest marginal gain is equivalent to finding the node with the highest score since $\Delta_i(u) = c(S_i \cup \{u\}) - c(S_i)$ and $c(S_i)$ is not dependent on $u$.
 
-If we now find a node $s$ with $\Delta_i(s)$, we can skip any node $u$ with $\Delta_{i - 1}(u)$ in the $i$-th iteration (since $\Delta_{i}(u) \leq \Delta_{i - 1}(u) \leq \Delta_i(s)$). For the optimization to be most efficient, it is important to find nodes with high marginal gains early. It is only necessary to keep track of the marginal gain in the previous iteration for each node. The nodes of the graph can be inserted into a priority queue sorted by their previous marginal gain. As soon as the previous marginal gain of an extracted node is smaller than the maximum marginal gain in the current iteration, the loop can be aborted and the node with the maximum marginal gain can be chosen for the group $S$.
+If we now find a node $s$ with $\Delta_i(s)$, we can skip any node $u$ with $\Delta_{i - 1}(u) \leq \Delta_i(s)$ in the $i$-th iteration (since $\Delta_{i}(u) \leq \Delta_{i - 1}(u) \leq \Delta_i(s)$). For the optimization to be most efficient, it is important to find nodes with high marginal gains early. It is only necessary to keep track of the marginal gain in the previous iteration for each node. The nodes of the graph can be inserted into a priority queue sorted by their previous marginal gain. As soon as the previous marginal gain of an extracted node is smaller than the maximum marginal gain in the current iteration, the loop can be aborted and the node with the maximum marginal gain can be chosen for the group $S$.
 
 
 \begin{algorithm2e}[h!]
@@ -143,11 +143,12 @@ If we now find a node $s$ with $\Delta_i(s)$, we can skip any node $u$ with $\De
   \caption{Efficient greedy algorithm to approximate the group with maximum group closeness}
 \end{algorithm2e}
 
+\newpage
 
 \section{Incremental group closeness}
 We will now present an algorithm that recomputes a set $S$ with high group closeness after an edge insertion. Our algorithm is based on the work by Bergamini and Meyerhenke. The algorithm tries to replicate the work of the static algorithm as long as possible with as little computational effort as possible.
 
-Basically, the algorithm is split into two phases which we will call \emph{replication} (Algorithm~\ref{alg:dynamicGroupCloseness}) and \emph{recomputation} (Algorithm~\ref{alg:dynamicGroupClosenessFallback}). There are two data structures that are initialized during the first run of the algorithm on the initial graph. $S$ is the set of nodes selected for the group. Let $S_i$ denote the set of selected nodes after the $i-th$ node $s_i$ is selected. $Score$ is a two-dimensional array that stores for each iteration $i$ and each node $u$ the resulting score $c(S_{i - 1} \cup u)$. The algorithm is still correct if $Score$ stores the marginal gain $\Delta_i(u)$ for each iteration $i$. Both $S$ and $Score$ persist between edge insertions.
+Basically, the algorithm is split into two phases which we will call \emph{replication} (Algorithm~\ref{alg:dynamicGroupCloseness}) and \emph{recomputation} (Algorithm~\ref{alg:dynamicGroupClosenessFallback}). There are two data structures that are initialized during the first run of the algorithm on the initial graph. $S$ is the set of nodes selected for the group. Let $S_i$ denote the set of selected nodes after the $i$-th node $s_i$ is selected. $Score$ is a two-dimensional array that stores for each iteration $i$ and each node $u$ the resulting score $c(S_{i - 1} \cup u)$. The algorithm is still correct if $Score$ stores the marginal gain $\Delta_i(u)$ for each iteration $i$. Both $S$ and $Score$ persist between edge insertions.
 
 The dynamic algorithm for group closeness requires $\mathcal{O}(k \cdot n)$ additional memory because it stores the marginal gains for each of the $k$ iterations instead of only keeping the marginal gains of the last iteration.
 
@@ -156,7 +157,7 @@ In the first phase of the algorithm, we try to replicate the results of the stat
 
 To update the first node of $S$, we use our dynamic algorithm for Top-$k$ closeness centrality from Section~\ref{sec:dynamicComplexRecomputation} (Line~\ref{alg:dynamicGcTopKCloseness}). 
 
-Similar to the dynamic algorithm for Top-$k$ closeness centrality, we compute the set of nodes affected by the edge insertion (Line~\ref{alg:dynamicGcAffectedNodes}). As long as the set $S_i$ is identical to $S_{old}$ in iteration $i$, we recompute the marginal gains for these affected nodes and update $Score[i][w]$ ($w \in A_G^f(u, v)$) accordingly. For all unaffected nodes, the existing marginal gains stored in $Score$ become upper bounds (Lines \ref{alg:dynamicGcUpperBound1} and \ref{alg:dynamicGcUpperBound2} ). Consider a node $u$ with marginal gain $\Delta_i(u)$. After an edge insertion, it is possible that a node $s_j$ chosen in any iteration $j \leq i$ has shorter path to a node $x$ that was previously covered by $u$. This results in a smaller marginal gain for $u$.
+Similar to the dynamic algorithm for Top-$k$ closeness centrality, we compute the set of nodes affected by the edge insertion (Line~\ref{alg:dynamicGcAffectedNodes}). As long as the set $S_i$ is identical to $S_{old}$ in iteration $i$, we recompute the marginal gains for these affected nodes and update $Score[i][w]$ ($w \in A_G^f(u, v)$) accordingly. For all unaffected nodes, the existing marginal gains stored in $Score$ become upper bounds (Lines \ref{alg:dynamicGcUpperBound1} and \ref{alg:dynamicGcUpperBound2}). Consider a node $u$ with marginal gain $\Delta_i(u)$. After an edge insertion, it is possible that a node $s_j$ chosen in any iteration $j < i$ has shorter path to a node $x$ that was previously covered by $u$. This results in a smaller marginal gain for $u$.
 
 After the old marginal gains of unaffected nodes are marked as upper bounds and the marginal gains of affected nodes have been computed, our algorithm selects the new node~$s$ for $S$. For this purpose, it selects the node~$s$ with the highest marginal gain from $Score[i]$ for the current iteration. If the marginal gain is the exact value, $s$ is added to $S$ (Line~\ref{alg:dynamicGcAddNode}). Otherwise, the exact marginal gain of $s$ is computed with a pruned SSSP (Line~\ref{alg:dynamicGcRecomputeMaximum}). This procedure is repeated until the maximum of $Score[i]$ is an exact marginal gain and not an upper bound. As in the static algorithm, the distances from $S$ to each node in the graph are updated after a new node is added to the group.
 
@@ -227,7 +228,7 @@ If the group changes after an edge insertion, the dynamic algorithm falls back t
   \KwData{$G = (V, E)$: a graph, $k$: a positive integer, $(u, v) \notin E$: the inserted edge}
   \KwResult{$S$: a set of $k$ nodes}
 
-  \While{$|S| < k$}{ \label{alg:dynamicGroupClosenessLoop}
+  \While{$|S| < k$}{ \label{alg:dynamicGroupClosenessLoopFallback}
     $i \gets |S|$ \\
     \ForEach{$u \in V \setminus S$}{ \label{alg:dynamicGcSubLoopStart}
        \texttt{PrunedSSSP($u$, $d_S$)} \label{alg:dynamicGcPrunedSSSP} \\

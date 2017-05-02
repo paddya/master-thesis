@@ -9,7 +9,7 @@ NetworKit provides tools to import graphs from files in several formats. There i
 
 In NetworKit, dynamic algorithms hold a reference to the underlying graph. Once the graph is modified externally, the dynamic algorithm is notified with a \texttt{GraphEvent} that contains the necessary information. For edge modifications, the event signals whether it was an edge insertion or an edge removal and contains the pair of nodes that is part of the edge.
 
-There are already implementations of the static algorithms for Top-$k$ closeness centrality in complex networks and street networks in NetworKit. There also is an implementation for the algorithm for group closeness by Bergamini and Meyerhenke. Our dynamic algorithms for these problems are based on these implementations.
+There are already implementations of the static algorithms for Top-$k$ closeness centrality in complex networks and street networks in NetworKit. There also is an implementation for the algorithm for group closeness by Bergamini et al. Our dynamic algorithms for these problems are based on these implementations.
 
 \section{New components}
 We add four new algorithms to NetworKit. \texttt{DynTopClosenessHarmonic} manages the list of the $k$ most central nodes in a dynamic graph. \texttt{DynGroupCloseness} approximates the group with the highest group closeness among all groups with $k$ members in a dynamic graph. 

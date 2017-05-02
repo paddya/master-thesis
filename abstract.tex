@@ -1,18 +1,30 @@
-\chapter{Acknowledgements}
+
 
 
 \chapter{Abstract}
 
-Closeness is a widely-studied centrality measure in network analysis. Computing the closeness centrality for all nodes in a graph does not scale to large real-world networks because it requires solving the all-pairs-shortest-path problem. For some applications, it is only necessary to find the $k$ most central nodes of a network. Prior work has shown that the Top-$k$ closeness centrality problem can be solved significantly faster on real-world networks than computing the closeness centrality for all nodes in the graph. In this thesis, we expand on this work and propose algorithms for Top-$k$ closeness centrality in dynamic graphs. Instead of recomputing the most central nodes from scratch after each modification of the graph, we use information obtained during earlier computations to update the list of the $k$ most central nodes faster. Our dynamic algorithms handle edge insertions and edge removals in directed and undirected unweighted graphs. We propose separate algorithms for complex social networks and street networks. We achieve speedups of up to three orders of magnitude compared to the static algorithm.
+Closeness is a widely-studied centrality measure in network analysis. Since it requires all pairwise distances, computing closeness centrality for all nodes is unfeasible for large real-world networks. However, for most applications, it is only necessary to find the $k$ most central nodes and not all closeness values. Prior work has shown that computing the top-k nodes with highest closeness can be done much faster than computing closeness for all nodes in real-world networks.
 
-We also study the problem of finding a \emph{group} of $k$ nodes with high closeness. We adapt a static greedy algorithm for the dynamic case. We use our dynamic algorithm for Top-$k$ closeness centrality and employ similar techniques to reduce the number of recomputations for unaffected nodes. On average, our dynamic algorithm is between 8 and 15 times faster, depending on the group size.
+However, for networks that evolve over time, no dynamic top-$k$ closeness algorithm exists that improves on static recomputation. In this thesis, we present several techniques that allow us to efficiently recompute the $k$ nodes with highest closeness after an edge insertion or an edge deletion. Our algorithms use information obtained during earlier computations to skip unnecessary work. However, they do not require asymptotically more memory than the static algorithms (i.e. linear in the number of nodes). We propose separate algorithms for complex networks and networks with large diameter, such as street networks. For edge insertions in undirected complex networks, our average speedup on recomputation is about 40 and it is up to 160 for some graphs. For street networks, the average speedup is 70 and it is up to 150. For some edges, our algorithm is up to three orders of magnitude faster than static recomputation.
+
+We also study the problem of finding the group of $k$ nodes with high closeness. We adapt a static greedy algorithm for the dynamic case. We use our dynamic algorithms for top-k closeness centrality and employ similar techniques to reduce the amount of computation. On average, our dynamic algorithm is between 8 and 15 times faster, depending on the group size.
+\vspace{1cm}
 
 
-\vspace{3cm}
-
-\begingroup
-\renewcommand{\cleardoublepage}{}
-\renewcommand{\clearpage}{}
 \chapter{Zusammenfassung}\label{chap:abstract_german}
 
-\endgroup
+Nähezentralität ist eine weit verbreitete Metrik im Feld der Netzwerkanalyse. Da zur Berechnung die Distanzen aller Knotenpaare nötig wären, ist es unpraktikabel, die Nähezentralität aller Knoten in großen realen Netzwerken zu berechnen. Für einige Anwendungen reicht es allerdings aus, die $k$ zentralsten Knoten zu bestimmen und nicht alle Nähezentralitäten. Frühere Arbeiten haben bereits gezeigt, dass die Berechnung der $k$ zentralsten Knoten wesentlich schneller durchgeführt werden kann als die Berechnung der Nähezentralität für alle Knoten. 
+
+Allerdings existieren bisher keine Algorithmen für Netzwerke, die sich im Laufe der Zeit verändern, die besser als eine statische Neuberechnung sind. Im Rahmen dieser Arbeit stellen wir nun mehrere Techniken vor, die uns erlauben, die $k$ zentralsten Knoten eines Netzwerks nach Einfügen oder Löschen einer Kante auf effiziente Weise neuzuberechnen. Unsere Algorithmen verwenden dabei Information aus früheren Berechnungen um unnötigen Rechenaufwand zu vermeiden. Dafür benötigen unsere Algorithmen nur linearen zusätzlichen Speicher, also asymptotisch gesehen nicht mehr als die statischen Algorithmen. Wir stellen verschiedene Algorithmen für komplexe Netzwerke und Netzwerke mit großen Durchmesser, wie zum Beispiel Straßennetzwerke vor. Unser dynamischer Algorithmus ist im Schnitt etwa 40 mal schneller als die statische Referenz für ungerichtete komplexe Netzwerke, in einzelnen Fällen bis zu 160 mal schneller. Für Straßennetzwerke wird die Berechnung im Schnitt um den Faktor 70 beschleunigt, für einzelne Graphen sogar um einen Faktor von 150. Für einige bestimmte Kanten ist unser dynamischer Algorithmus um bis zu drei Größenordnungen schneller als eine statische Neuberechnung.
+
+Wir beschäftigen uns außerdem mit dem Problem der Gruppenzentralität. Dabei geht es darum, eine Gruppe mit $k$ Knoten zu finden, die als Ganzes eine hohe Zentralität hat. Dabei passen wir einen statischen Greedy-Algorithmus für dynamische Graphen an. Wir verwenden dabei unter anderem unseren dynamischen Algorithmus für Top-$k$-Nähezentralität und adaptieren weitere ähnliche Techniken um den Rechenaufwand zu reduzieren. Im Durchschnitt ist unser dynamischer Algorithmus acht bis fünfzehn Mal schneller als die statische Referenz, je nachdem wie groß die gesuchte Gruppe ist.
+
+\chapter{Acknowledgements}
+
+First of all, I would like to thank Professor Meyerhenke for giving me the opportunity to work on this very interesting topic.
+
+My special thanks goes to my advisor Elisabetta Bergamini. She helped me find the topic and assisted me in every way I needed. We had many productive discussions that produced the ideas and solutions presented in this thesis.
+
+I would like to thank all of my friends who were very accepting when I did not have the time or mood to attend social events.
+
+At last, I would like to thank my parents, my brother, and my sister for supporting me all this time.
