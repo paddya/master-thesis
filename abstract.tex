@@ -7,7 +7,7 @@ Closeness is a widely-studied centrality measure in network analysis. Since it r
 
 However, for networks that evolve over time, no dynamic top-$k$ closeness algorithm exists that improves on static recomputation. In this thesis, we present several techniques that allow us to efficiently recompute the $k$ nodes with highest closeness after an edge insertion or an edge deletion. Our algorithms use information obtained during earlier computations to skip unnecessary work. However, they do not require asymptotically more memory than the static algorithms (i.e. linear in the number of nodes). We propose separate algorithms for complex networks and networks with large diameter, such as street networks. For edge insertions in undirected complex networks, our average speedup on recomputation is about 40 and it is up to 160 for some graphs. For street networks, the average speedup is 70 and it is up to 150. For some edges, our algorithm is up to three orders of magnitude faster than static recomputation.
 
-We also study the problem of finding the group of $k$ nodes with high closeness. We adapt a static greedy algorithm for the dynamic case. We use our dynamic algorithms for top-k closeness centrality and employ similar techniques to reduce the amount of computation. On average, our dynamic algorithm is between 8 and 15 times faster, depending on the group size.
+We also study the problem of finding a group of $k$ nodes with high closeness. We adapt a static greedy algorithm for the dynamic case. We use our dynamic algorithms for top-k closeness centrality and employ similar techniques to reduce the amount of computation. On average, our dynamic algorithm is between 8 and 15 times faster, depending on the group size.
 \vspace{1cm}
 
 
